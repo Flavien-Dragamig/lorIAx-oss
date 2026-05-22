@@ -2,171 +2,273 @@
 
 # LorIAx
 
-**Une suite collaborative type Notion/Obsidian, auto-hébergée, avec IA intégrée.**
+**Suite collaborative auto-hébergée type Notion/Obsidian, avec IA intégrée, pour les organismes qui veulent garder la main sur leurs données.**
 
-Édition open source · Licence MIT · v1.21.0
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Stack](https://img.shields.io/badge/stack-Next.js%2016%20%C2%B7%20PostgreSQL%20%C2%B7%20TipTap%20%C2%B7%20Yjs-22c55e.svg)
+![Status](https://img.shields.io/badge/status-v1.21.0%20%C2%B7%20stable-orange.svg)
 
-[Fonctionnalités](#-fonctionnalités) · [Démarrage rapide](#-démarrage-rapide) · [Déploiement](#-déploiement) · [Configuration](#-configuration) · [Stack & crédits OSS](#-stack--crédits-oss) · [Contribuer](#-contribuer)
+[Fonctionnalités](#fonctionnalités) • [Démarrage](#démarrage-rapide) • [Déploiement](#déploiement) • [Architecture](#architecture) • [Stack](#stack-technique--dépendances-oss) • [Contribuer](#contribuer)
 
 </div>
 
 ---
 
-## 📖 À propos
+LorIAx est une plateforme de **gestion de connaissances et de productivité collaborative**, conçue pour les organismes qui veulent un Notion-like souverain et auto-hébergeable. Édition WYSIWYG temps réel, IA multi-provider, calendrier, visio, whiteboard, mindmap et bases de données — le tout dans une seule app cohérente. Cette édition open source est extraite du produit commercial de Dragamig SAS, publiée sous licence MIT.
 
-LorIAx est une plateforme de **gestion de connaissances et de productivité collaborative**, conçue pour les organismes qui veulent un Notion-like **souverain** et **auto-hébergeable**, sans verrou cloud.
+> **Pour qui ?** Équipes, associations, collectivités, PME et services internes qui veulent un outil de productivité collaboratif **sans verrou cloud**, déployable sur leur propre infrastructure (VPS, on-premise, datacenter souverain).
 
-Le projet vise trois objectifs :
+## Aperçu
 
-1. **Souveraineté** — tout tourne sur ton infrastructure : base, stockage objet, visio, IA locale.
-2. **Polyvalence** — édition riche, calendrier, visio, whiteboard, mindmap, base de données, charts, le tout dans un seul outil cohérent.
-3. **Frugalité** — peu de dépendances cloud propriétaires, des composants OSS éprouvés, un déploiement Docker Compose en une commande.
+Captures d'écran à venir dans `docs/screenshots/` — contributions bienvenues via PR.
 
-Cette **édition open source** est publiée par [Dragamig SAS](https://dragamig.fr) sous licence MIT. Une [édition commerciale](#différences-avec-lédition-commerciale) ajoute des modules métier (chat, tasks, studio vidéo, design, réservation de salles).
+## Fonctionnalités
 
----
+### Édition collaborative temps réel
 
-## ✨ Fonctionnalités
+- Éditeur WYSIWYG markdown avec slash-commands, mentions `@`, wiki-links `[[doc]]`, callouts, tables, code highlighting.
+- Édition simultanée multi-curseur sans conflit (CRDT).
+- Historique versionné de chaque document, navigation et diff visuel.
+- Mode hors-ligne avec synchronisation différée à la reconnexion.
 
-### 📝 Édition collaborative temps réel
+### Blocs riches
 
-- **Éditeur WYSIWYG markdown** propulsé par [TipTap](https://tiptap.dev) avec slash-commands, mentions `@`, wiki-links `[[doc]]`, callouts, tables, code highlighting.
-- **Collaboration CRDT** via [Yjs](https://yjs.dev) + [Hocuspocus](https://tiptap.dev/hocuspocus) : édition simultanée, curseurs partagés, historique sans conflit.
-- **Versioning Git natif** : chaque document est versionné via [isomorphic-git](https://isomorphic-git.org), historique navigable, diff visuel.
-- **Mode hors-ligne** : Service Worker [Serwist](https://serwist.pages.dev) + IndexedDB, synchronisation différée.
+- Whiteboard infini, mindmaps, tableurs compatibles Excel, charts, cartes Leaflet.
+- Bases de données type Notion (vues table, kanban, calendrier).
+- Calendriers et réunions vidéo embarqués directement dans un document.
 
-### 🧩 Blocs riches
+### IA multi-provider
 
-- **Whiteboard** infini avec [Excalidraw](https://excalidraw.com)
-- **Mindmaps** avec [Mind Elixir](https://mind-elixir.com)
-- **Spreadsheets** avec [Univer](https://univer.ai) (compatible Excel/CSV)
-- **Charts** avec [Recharts](https://recharts.org)
-- **Cartes** avec [Leaflet](https://leafletjs.com) + react-leaflet
-- **Bases de données** style Notion (vues table, kanban, calendrier)
-- **Calendriers embarqués** (CalDAV) directement dans un document
-- **Visio inline** (LiveKit) + **réunions présentielles** avec captation audio
+- Chat contextuel sur tes documents, résumés, traductions, génération de blocs.
+- Providers commutables : Claude, OpenAI, Mistral, Ollama (local).
+- RAG sémantique sur ta base via embeddings vectoriels.
+- Quotas par utilisateur / organisation, logs d'usage, prompts personnalisables.
 
-### 🤖 IA multi-provider
+### Graphe de connaissances
 
-- **Chat contextuel** sur tes documents avec [Vercel AI SDK](https://sdk.vercel.ai)
-- **Providers** : Anthropic Claude, OpenAI, Mistral, [Ollama](https://ollama.com) (local)
-- **RAG** sémantique sur ta base via [pgvector](https://github.com/pgvector/pgvector)
-- **Quotas** par utilisateur/organisation, logs d'usage, prompts personnalisables
-- **Résumés**, traductions, génération de blocs depuis un prompt
+- Liens `[[document]]` automatiques avec backlinks.
+- Visualisation interactive du graphe documentaire.
+- Recherche full-text **et** sémantique.
 
-### 🔗 Graphe de connaissances
+### Calendrier & visio
 
-- **Wiki-links** `[[document]]` automatiques avec backlinks
-- **Visualisation D3** interactive du graphe documentaire
-- **Recherche full-text** PostgreSQL (FTS + pg_trgm) + **recherche sémantique** pgvector
+- Serveur CalDAV intégré (synchronisable Apple Calendar, Thunderbird, DAVx⁵).
+- Visioconférence self-host avec transcription audio automatique.
+- Vues mois / semaine / jour / agenda, invitations, rappels.
 
-### 📅 Calendrier & visio
+### Multi-tenants & accès
 
-- **Serveur CalDAV** intégré, synchronisable avec Apple Calendar, Thunderbird, DAVx⁵
-- **Visioconférence** [LiveKit](https://livekit.io) en self-host
-- **Transcription** automatique via [Whisper](https://github.com/openai/whisper) ou [Voxtral](https://github.com/voxtral/voxtral) (CPU)
-- Vues mois / semaine / jour / agenda, invitations, rappels
+- Authentification credentials, OAuth, LDAP.
+- RBAC granulaire (super_admin, admin, editor, viewer).
+- Multi-organisations avec permissions par espace.
+- Partages publics révocables avec expiration.
 
-### 👥 Multi-tenants & accès
+### PWA & souveraineté
 
-- **Authentification** [NextAuth v5](https://authjs.dev) : credentials, OAuth, magic links
-- **LDAP** natif (ldapjs)
-- **RBAC** : super_admin, admin, editor, viewer
-- **Multi-organisations** avec permissions par espace
-- **Partages publics** révocables avec expiration
+- Installable comme app native (Android, iOS, desktop).
+- Stockage objet S3-compatible (Garage, MinIO, AWS, B2, …) ou filesystem.
+- Sauvegardes automatiques planifiées.
+- Webhooks sortants pour intégration externe.
 
-### 🗄️ Stockage & infrastructure
+## Architecture
 
-- **PostgreSQL 16** + extensions pgvector + pg_trgm
-- **S3 compatible** : [Garage](https://garagehq.deuxfleurs.fr) recommandé (auto-hébergé, FR), ou MinIO, AWS S3, Backblaze B2, etc.
-- **Mode filesystem** pour les petites installations
-- **Sauvegardes** automatiques planifiées via croner
-- **Webhooks** sortants pour intégration avec n'importe quel système
+```
+                    ┌──────────────────────────────┐
+                    │  Navigateur / PWA (React 19) │
+                    └──────────────┬───────────────┘
+                                   │ HTTPS + WebSocket
+                                   ▼
+        ┌──────────────────────────────────────────────────┐
+        │  Reverse proxy (Caddy / Traefik / Nginx)         │
+        └──────────────┬─────────────────────┬─────────────┘
+                       │                     │
+                       ▼                     ▼ /ws/collab
+        ┌──────────────────────────┐  ┌───────────────────┐
+        │  Next.js 16 App Router   │  │  Hocuspocus       │
+        │  + API routes + RBAC     │  │  (Yjs CRDT WS)    │
+        │  + RAG + IA orchestration│  └─────────┬─────────┘
+        └────┬─────────┬──────┬────┘            │
+             │         │      │                 │
+             ▼         ▼      ▼                 ▼
+       ┌──────────┐ ┌─────┐ ┌─────────┐  ┌──────────────┐
+       │ Postgres │ │ S3  │ │ LLM     │  │ Doc states   │
+       │ pgvector │ │     │ │ provider│  │ (Yjs binary) │
+       │ pg_trgm  │ │ Gar.│ │ Claude/ │  └──────────────┘
+       └──────────┘ │MinIO│ │ OpenAI/ │
+                    │ AWS │ │ Ollama  │
+                    └─────┘ └─────────┘
+                       ▲
+                       │
+                   ┌───┴────┐
+                   │LiveKit │  (visio + transcription Whisper/Voxtral)
+                   └────────┘
+```
 
-### 📱 PWA
+Trois plans d'exécution dans un seul process Node :
 
-Installable comme app native (Android, iOS, desktop), avec push notifications, badge d'icône, et plein-écran.
+1. **HTTP/REST** — Next.js App Router (routes UI + `/api/*`).
+2. **WebSocket collab** — Hocuspocus sur `/ws/collab`, sauvegarde des `Y.Doc` dans Postgres.
+3. **Workers** — schedulers croner (backups, télémétrie, purges).
 
----
+## Stack technique & dépendances OSS
 
-## 🚀 Démarrage rapide
+L'intégralité de la stack est libre. Chaque outil est listé avec sa licence d'origine, conformément à l'esprit OSS.
+
+### Frontend
+
+| Outil | Version | Licence | Rôle |
+|---|---|---|---|
+| [Next.js](https://nextjs.org) | 16 | MIT | Framework React + serveur custom |
+| [React](https://react.dev) | 19 | MIT | UI |
+| [TypeScript](https://www.typescriptlang.org) | 6 | Apache-2.0 | Typage statique |
+| [Tailwind CSS](https://tailwindcss.com) | 4 | MIT | Styling utility-first |
+| [shadcn/ui](https://ui.shadcn.com) + [@base-ui/react](https://base-ui.com) | 1.3 | MIT | Composants accessibles |
+| [TipTap](https://tiptap.dev) | 3 | MIT | Éditeur WYSIWYG headless |
+| [Yjs](https://yjs.dev) | 13 | MIT | CRDT collaboration temps réel |
+| [Excalidraw](https://excalidraw.com) | 0.18 | MIT | Whiteboard |
+| [Mind Elixir](https://mind-elixir.com) | 5 | MIT | Mindmaps |
+| [Univer](https://univer.ai) | 0.19 | Apache-2.0 | Tableur compatible Excel |
+| [Recharts](https://recharts.org) | 3 | MIT | Visualisations |
+| [Leaflet](https://leafletjs.com) + react-leaflet | 1.9 / 5 | BSD-2 / Hippocratic | Cartes |
+| [Lucide](https://lucide.dev) | 0.577 | ISC | Icônes |
+| [Sonner](https://sonner.emilkowal.ski) | 2 | MIT | Toasts |
+| [cmdk](https://cmdk.paco.me) | 1 | MIT | Command palette |
+| [@dnd-kit](https://dndkit.com) | 6 | MIT | Drag & drop |
+| [Serwist](https://serwist.pages.dev) | 9 | BSD-3 | Service Worker / PWA |
+
+### Backend
+
+| Outil | Licence | Rôle |
+|---|---|---|
+| [Drizzle ORM](https://orm.drizzle.team) + drizzle-kit | Apache-2.0 | ORM SQL typé + migrations |
+| [PostgreSQL](https://www.postgresql.org) | PostgreSQL | Base de données |
+| [pgvector](https://github.com/pgvector/pgvector) | PostgreSQL | Embeddings vectoriels |
+| [pg_trgm](https://www.postgresql.org/docs/current/pgtrgm.html) | PostgreSQL | Recherche fuzzy |
+| [NextAuth v5](https://authjs.dev) | ISC | Authentification |
+| [ldapjs](http://ldapjs.org) | MIT | Connecteur LDAP |
+| [jose](https://github.com/panva/jose) | MIT | JWT / JWS / JWE |
+| [bcryptjs](https://github.com/dcodeIO/bcrypt.js) | MIT | Hash de mots de passe |
+| [Zod](https://zod.dev) | MIT | Validation runtime |
+| [Hocuspocus](https://tiptap.dev/hocuspocus) | MIT | Serveur collab Yjs |
+| [Vercel AI SDK](https://sdk.vercel.ai) | Apache-2.0 | Abstraction LLM multi-provider |
+| [Ollama](https://ollama.com) (client) | MIT | LLM locaux |
+| [isomorphic-git](https://isomorphic-git.org) | MIT | Versioning Git pur JS |
+| [croner](https://github.com/Hexagon/croner) | MIT | Scheduler |
+| [pino](https://getpino.io) | MIT | Logger structuré |
+| [ioredis](https://github.com/redis/ioredis) | MIT | Client Redis |
+| [nodemailer](https://nodemailer.com) / [resend](https://resend.com) | MIT | Envoi d'emails |
+| [Sharp](https://sharp.pixelplumbing.com) | Apache-2.0 | Traitement d'images |
+| [FFmpeg](https://ffmpeg.org) (`@ffmpeg/ffmpeg`) | LGPL-2.1 | Traitement audio/vidéo |
+| [LiveKit](https://livekit.io) (server-sdk) | Apache-2.0 | Visio WebRTC |
+| [Whisper](https://github.com/openai/whisper) / [Voxtral](https://github.com/voxtral/voxtral) | MIT / Apache-2.0 | Transcription audio |
+
+### Qualité & tests
+
+| Outil | Licence | Rôle |
+|---|---|---|
+| [Vitest](https://vitest.dev) | MIT | Tests unitaires |
+| [Playwright](https://playwright.dev) | Apache-2.0 | Tests end-to-end |
+| [ESLint](https://eslint.org) + eslint-config-next | MIT | Lint |
+| [@testing-library/react](https://testing-library.com) | MIT | Test composants |
+
+### Infrastructure
+
+| Outil | Licence | Rôle |
+|---|---|---|
+| [Docker](https://www.docker.com) / [Docker Compose](https://docs.docker.com/compose/) | Apache-2.0 | Conteneurisation |
+| [Garage](https://garagehq.deuxfleurs.fr) | AGPL-3.0 | Stockage objet S3 distribué auto-hébergé (recommandé) |
+| [Traefik](https://traefik.io) / [Caddy](https://caddyserver.com) / [Nginx](https://nginx.org) | MIT / Apache-2.0 / BSD-2 | Reverse proxy au choix |
+
+Liste exhaustive et licences dans [`NOTICE.md`](./NOTICE.md) et `package.json`.
+
+## Démarrage rapide
 
 ### Prérequis
 
-- **Node.js ≥ 20** ([nvm](https://github.com/nvm-sh/nvm) recommandé — un fichier `.nvmrc` est fourni)
-- **PostgreSQL 16** avec extensions `pgvector` et `pg_trgm` activées
-- (optionnel) **Docker** ≥ 24 + Docker Compose v2 si tu utilises le mode tout-en-un
+- **Node.js ≥ 20** ([nvm](https://github.com/nvm-sh/nvm) recommandé — `.nvmrc` fourni)
+- **PostgreSQL 16** avec extensions `pgvector` et `pg_trgm`
+- (optionnel) **Docker ≥ 24** + Docker Compose v2 pour l'option tout-en-un
 
-### Installation locale (Node only)
+### Installation
 
 ```bash
-# 1. Cloner
 git clone https://github.com/Flavien-Dragamig/lorIAx-oss.git
 cd lorIAx-oss
-
-# 2. Installer les dépendances
-npm install
-
-# 3. Configurer l'environnement
 cp .env.example .env.local
-# Éditer .env.local : a minima DATABASE_URL et NEXTAUTH_SECRET
-
-# 4. Initialiser la base (migrations + comptes de démo + templates)
-npm run db:fresh
-
-# 5. Lancer le serveur (Next.js + WebSocket collaboration)
+npm install
+npm run db:fresh   # migrations + comptes de démo + templates
 npm run dev
 ```
 
-L'app est accessible sur **http://localhost:3000**.
+App accessible sur **http://localhost:3000**.
 
-**Comptes de démo** (créés par `db:seed`) :
+Comptes de démo (à changer avant tout déploiement public) :
 
 | Email | Mot de passe | Rôle |
-|-------|--------------|------|
+|---|---|---|
 | `admin@loriax.dev` | `admin123` | super_admin |
 | `user@loriax.dev` | `user123` | editor |
 
-⚠ **Changer ces mots de passe avant tout déploiement public.**
+## Configuration
 
----
+Toutes les variables d'environnement sont documentées dans [`.env.example`](./.env.example) — c'est la source de vérité.
 
-## 🐳 Déploiement
+Sous-ensemble essentiel :
 
-### Option A — Docker Compose (recommandé pour démarrer)
+| Variable | Côté | Description |
+|---|---|---|
+| `DATABASE_URL` | serveur | URL PostgreSQL (pgvector + pg_trgm requis) |
+| `NEXTAUTH_SECRET` | serveur | Secret de signature des sessions (`openssl rand -base64 32`) |
+| `NEXTAUTH_URL` | serveur | URL publique pour les redirections OAuth |
+| `NEXT_PUBLIC_APP_URL` | client+serveur | URL publique (emails, webhooks, QR codes) |
+| `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY` | serveur | Stockage objet (optionnel — filesystem par défaut) |
+| `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `MISTRAL_API_KEY` / `OLLAMA_HOST` | serveur | Providers IA (optionnels, configurables aussi en runtime via l'admin) |
+| `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` | serveur | Visio (optionnel) |
+| `LDAP_URL`, `LDAP_BIND_DN`, `LDAP_BIND_CREDENTIALS`, `LDAP_SEARCH_BASE` | serveur | Annuaire (optionnel) |
 
-Le fichier `docker-compose.yml` à la racine embarque **tous les services nécessaires** : app, PostgreSQL (avec pgvector), Garage (S3), Ollama (IA locale), backup planifié.
+> ⚠️ Ne **jamais** committer un `.env` rempli. Seul `.env.example` doit être versionné.
+
+## Déploiement
+
+### Build de production
+
+```bash
+npm run build
+npm start    # Next.js + serveur WebSocket collaboration
+```
+
+### Docker Compose (recommandé)
+
+Stack tout-en-un : app + PostgreSQL (pgvector) + Garage (S3) + Ollama + backup planifié.
 
 ```bash
 cp .env.example .env.local
-# Éditer .env.local : NEXTAUTH_SECRET, POSTGRES_PASSWORD, etc.
-
 docker compose up -d
 ```
 
-Variantes fournies :
+Variantes fournies à la racine :
 
 | Fichier | Usage |
-|---------|-------|
+|---|---|
 | `docker-compose.yml` | Dev local tout-en-un |
-| `docker-compose.prod.yml` | Production avec Traefik, healthchecks renforcés |
-| `docker-compose.livekit.yml` | Ajout du stack LiveKit (visio) |
-| `docker-compose.registry.yml` | Pull depuis un registry privé (GHCR) |
-| `docker/docker-compose.dev.yml` | Stack de dépendances uniquement (BDD + S3, sans app) |
+| `docker-compose.prod.yml` | Production avec Traefik et healthchecks renforcés |
+| `docker-compose.livekit.yml` | Ajout de la stack LiveKit (visio) |
+| `docker-compose.registry.yml` | Pull depuis un registry privé (GHCR par défaut) |
+| `docker/docker-compose.dev.yml` | Dépendances seules (BDD + S3), pour itérer l'app en `npm run dev` |
 
-### Option B — Reverse proxy + Node directement
+### PaaS self-host (Dokploy, Coolify, Easypanel)
 
-Idéal pour un VPS avec [Caddy](https://caddyserver.com), [Traefik](https://traefik.io) ou [Nginx](https://nginx.org).
+Le `Dockerfile` est compatible. Configurer :
 
-```bash
-# Build production
-npm run build
+- **Build** : Dockerfile
+- **Port exposé** : `3000` (HTTP **et** WS upgrade sur `/ws/collab`)
+- **Variables** : voir `.env.example`
+- **Volumes** : `/app/workspaces` (documents) — migrations bundlées dans l'image
+- **Healthcheck** : `GET /api/health`
 
-# Démarrer en production (Next.js + WebSocket sur le port défini)
-npm start
-```
+### Reverse proxy
 
-Faire pointer le reverse proxy vers `localhost:3000`. Activer le **WebSocket upgrade** sur les chemins `/ws/collab`. Exemple Caddy :
+Exemple Caddy minimal :
 
 ```caddyfile
 loriax.example.com {
@@ -174,170 +276,122 @@ loriax.example.com {
 }
 ```
 
-### Option C — PaaS Self-host (Dokploy, Coolify, Easypanel)
+Caddy gère automatiquement l'upgrade WebSocket. Pour Nginx, ajouter `proxy_set_header Upgrade $http_upgrade;` et `proxy_set_header Connection "upgrade";` sur `/ws/collab`.
 
-Le `Dockerfile` à la racine est compatible avec [Dokploy](https://dokploy.com), [Coolify](https://coolify.io), [Easypanel](https://easypanel.io). Configurer :
+### Migrations & sauvegardes
 
-- **Build** : Dockerfile
-- **Port exposé** : `3000`
-- **Variables** : voir `.env.example`
-- **Volumes** : `/app/workspaces` (documents), `/app/migrations` (déjà bundlés)
-- **Healthcheck** : `GET /api/health`
+- Migrations Drizzle exécutées **automatiquement** au démarrage par `server.ts`.
+- Sauvegardes : service `backup` du compose (`pg_dump` quotidien + snapshot S3), réglable via `BACKUP_SCHEDULE` et `BACKUP_RETENTION_DAYS`.
 
-### Migrations en production
+## Scripts npm
 
-Les migrations Drizzle sont **exécutées automatiquement au démarrage** par `server.ts`. Pour forcer manuellement :
+| Commande | Effet |
+|---|---|
+| `npm run dev` | Serveur Next.js + WebSocket en mode dev (tsx watch) |
+| `npm run dev:full` | Stack complète (Docker + BDD + seed + serveur) |
+| `npm run dev:stop` | Arrête la stack `dev:full` |
+| `npm run build` | Build production Next.js |
+| `npm start` | Démarre `server.js` compilé en production |
+| `npm run lint` | ESLint |
+| `npm test` | Vitest (tests unitaires) |
+| `npm run test:e2e` | Playwright (end-to-end) |
+| `npm run db:fresh` | Reset BDD + migrations + seed (dev users, base, démo) |
+| `npm run db:reset` | Reset BDD seul |
+| `npm run db:seed`, `db:seed:base`, `db:seed:templates`, `db:seed:ai-prompts`, `db:seed:demo` | Seeds ciblés |
+| `npm run db:generate` | Génère une nouvelle migration depuis le schéma |
+| `npm run db:migrate` | Applique les migrations manuellement |
+| `npm run db:push` | Sync schéma direct (dev uniquement, sans migration) |
+| `npm run db:studio` | Lance Drizzle Studio (UI BDD) |
+| `npm run db:migrate:fts` | Applique les triggers de recherche full-text |
+
+## Structure du projet
+
+```
+.
+├── server.ts                  # Serveur custom (Next + Hocuspocus + crons)
+├── src/
+│   ├── app/                   # Next.js App Router
+│   │   ├── (auth)/            # Login, register, reset password
+│   │   ├── (app)/             # App principale (avec sidebar)
+│   │   └── api/               # Route handlers REST + v1 publique
+│   ├── components/            # React
+│   │   ├── ui/                # shadcn/ui primitives
+│   │   ├── editor/            # TipTap + extensions custom
+│   │   ├── graph/             # Visualisation D3 du graphe
+│   │   ├── sidebar/           # Navigation
+│   │   └── ai/                # Chat IA, résumé
+│   ├── lib/                   # Logique métier
+│   │   ├── db/                # Schéma Drizzle, client, migrations
+│   │   ├── auth/              # NextAuth + RBAC + LDAP
+│   │   ├── collab/            # Hocuspocus + Yjs
+│   │   ├── storage/           # S3 (Garage) + filesystem
+│   │   ├── git/               # isomorphic-git
+│   │   ├── ai/                # Providers + RAG
+│   │   ├── editor/            # Conversion MD ↔ TipTap
+│   │   └── security/          # SSRF, rate-limit, URL validation
+│   ├── hooks/                 # Hooks React custom
+│   └── types/                 # Types TypeScript partagés
+├── scripts/                   # Seeds, migrations FTS, dev helpers
+├── docker/                    # Compose dev + sous-stacks (Garage, LiveKit, Voxtral)
+├── docker-compose*.yml        # Variantes d'orchestration
+├── Dockerfile
+├── drizzle.config.ts
+└── .env.example               # Source de vérité config
+```
+
+## Tests & qualité
 
 ```bash
-npm run db:migrate
+npm test            # Vitest (unitaires + intégration)
+npm run test:e2e    # Playwright (parcours bout-en-bout)
+npm run lint        # ESLint
+npx tsc --noEmit    # Vérification TypeScript stricte
 ```
 
-### Sauvegardes
+Couverture chiffrée pas encore publiée ; contributions bienvenues sur les chemins critiques (auth, RBAC, collab, RAG).
 
-Le service `backup` du docker-compose effectue un `pg_dump` quotidien + snapshot S3 dans un volume dédié. Configurable via :
+## Contribuer
 
-```
-BACKUP_SCHEDULE=0 3 * * *
-BACKUP_RETENTION_DAYS=14
-```
+Lire [`CONTRIBUTING.md`](./CONTRIBUTING.md). Conventions :
 
----
-
-## 🔧 Configuration
-
-Toutes les variables d'environnement sont documentées **dans `.env.example`** avec leurs valeurs par défaut et leur caractère `[REQUIRED]` / `[OPTIONAL]`.
-
-### Variables essentielles
-
-| Variable | Description |
-|----------|-------------|
-| `DATABASE_URL` | URL PostgreSQL (pgvector + pg_trgm requis) |
-| `NEXTAUTH_SECRET` | Secret de signature des sessions (`openssl rand -base64 32`) |
-| `NEXTAUTH_URL` | URL publique pour les redirections OAuth |
-| `NEXT_PUBLIC_APP_URL` | URL publique (emails, webhooks, QR codes) |
-
-### Stockage objet (optionnel)
-
-| Variable | Description |
-|----------|-------------|
-| `S3_ENDPOINT` | Endpoint S3 (Garage, MinIO, AWS, …) |
-| `S3_BUCKET` | Bucket cible |
-| `S3_ACCESS_KEY` / `S3_SECRET_KEY` | Credentials |
-
-Sans S3 configuré, LorIAx bascule sur le filesystem (`WORKSPACES_PATH`).
-
-### IA (optionnel)
-
-Les clés peuvent être définies **en variables d'env** ou **en runtime via l'admin** (chiffrées en base) :
-
-| Variable | Provider |
-|----------|----------|
-| `ANTHROPIC_API_KEY` | Claude |
-| `OPENAI_API_KEY` | OpenAI |
-| `MISTRAL_API_KEY` | Mistral |
-| `OLLAMA_HOST` | Ollama local (ex: `http://ollama:11434`) |
-
-### Visio LiveKit (optionnel)
-
-| Variable | Description |
-|----------|-------------|
-| `LIVEKIT_URL` | WebSocket LiveKit (`wss://livekit.example.com`) |
-| `LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET` | Credentials serveur |
-
-### LDAP (optionnel)
-
-| Variable | Description |
-|----------|-------------|
-| `LDAP_URL`, `LDAP_BIND_DN`, `LDAP_BIND_CREDENTIALS`, `LDAP_SEARCH_BASE` | Connexion annuaire |
-
----
-
-## 🛠️ Stack & crédits OSS
-
-LorIAx n'existerait pas sans la communauté open source. Voici les briques principales et leurs auteurs.
-
-### Cœur applicatif
-
-- **[Next.js 16](https://nextjs.org)** (Vercel) — framework React/serveur
-- **[React 19](https://react.dev)** (Meta) — UI
-- **[TypeScript](https://www.typescriptlang.org)** (Microsoft) — typage statique
-- **[Tailwind CSS 4](https://tailwindcss.com)** + **[shadcn/ui](https://ui.shadcn.com)** + **[@base-ui/react](https://base-ui.com)** — design system
-- **[Drizzle ORM](https://orm.drizzle.team)** + **drizzle-kit** — ORM SQL typé
-- **[PostgreSQL](https://www.postgresql.org)** + **[pgvector](https://github.com/pgvector/pgvector)** (Andrew Kane) + **pg_trgm**
-- **[NextAuth v5](https://authjs.dev)** — authentification
-- **[Zod](https://zod.dev)** (Colin McDonnell) — validation runtime
-
-### Édition & collaboration
-
-- **[TipTap](https://tiptap.dev)** — éditeur WYSIWYG headless
-- **[Yjs](https://yjs.dev)** (Kevin Jahns) — CRDT temps réel
-- **[Hocuspocus](https://tiptap.dev/hocuspocus)** — serveur de collaboration Yjs
-- **[Excalidraw](https://excalidraw.com)** — whiteboard
-- **[Mind Elixir](https://mind-elixir.com)** — mindmap
-- **[Univer](https://univer.ai)** — tableur compatible Excel
-- **[Recharts](https://recharts.org)** — visualisations de données
-- **[Leaflet](https://leafletjs.com)** + **react-leaflet** — cartes
-- **[lowlight](https://github.com/wooorm/lowlight)** + **[highlight.js](https://highlightjs.org)** — coloration syntaxique
-
-### IA & media
-
-- **[Vercel AI SDK](https://sdk.vercel.ai)** — abstraction multi-provider
-- **[Ollama](https://ollama.com)** — LLM locaux
-- **[LiveKit](https://livekit.io)** — visioconférence WebRTC
-- **[Whisper](https://github.com/openai/whisper)** (OpenAI) / **[Voxtral](https://github.com/voxtral/voxtral)** — transcription audio
-- **[FFmpeg](https://ffmpeg.org)** + **[Sharp](https://sharp.pixelplumbing.com)** (Lovell Fuller) — média
-
-### Infrastructure & stockage
-
-- **[Garage](https://garagehq.deuxfleurs.fr)** ([Deuxfleurs](https://deuxfleurs.fr), AGPL-3.0) — stockage objet S3 distribué auto-hébergé recommandé
-- **[isomorphic-git](https://isomorphic-git.org)** — Git en pur JavaScript
-- **[Serwist](https://serwist.pages.dev)** — Service Worker
-- **[ioredis](https://github.com/redis/ioredis)** — client Redis
-- **[croner](https://github.com/Hexagon/croner)** — scheduler
-- **[pino](https://getpino.io)** — logger structuré
-
-### Auth & sécurité
-
-- **[bcryptjs](https://github.com/dcodeIO/bcrypt.js)**, **[jose](https://github.com/panva/jose)** (Filip Skokan), **[ldapjs](http://ldapjs.org)**
-
-### Icônes & UX
-
-- **[Lucide](https://lucide.dev)** — iconographie
-- **[Sonner](https://sonner.emilkowal.ski)** (Emil Kowalski) — toasts
-- **[cmdk](https://cmdk.paco.me)** (Paco Coursey) — command palette
-- **[@dnd-kit](https://dndkit.com)** (Claudéric Demers) — drag & drop
-
-La liste complète des dépendances et leurs licences est consultable dans [`NOTICE.md`](./NOTICE.md) et `package.json`.
-
----
-
-## 🔀 Différences avec l'édition commerciale
-
-Cette édition open source ne contient **pas** les modules suivants, réservés à l'édition commerciale de [Dragamig SAS](https://dragamig.fr) :
-
-- **Chat** d'équipe (canaux, DM, digest)
-- **Tasks** & vue Gantt
-- **Studio vidéo / audio** (rendu vidéo, banques d'images intégrées)
-- **Studio design** ([Penpot](https://penpot.app) embarqué)
-- **Réservation de salles** de réunion (et rôle `facility_manager`)
-- **UI de gestion d'espaces** (le modèle de données est conservé, l'UI de création/admin est retirée)
-
-Si tu as besoin de ces modules ou d'un support entreprise, contacte `contact@dragamig.fr`.
-
----
-
-## 🤝 Contribuer
-
-Les contributions sont bienvenues. Lire [`CONTRIBUTING.md`](./CONTRIBUTING.md) pour les conventions (Conventional Commits, TypeScript strict, frugalité).
+- **Conventional Commits** obligatoires (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`, `perf:`).
+- TypeScript strict, alias `@/` pour `src/`.
+- Frugalité : pas de SaaS externe imposé, peu de dépendances lourdes.
+- UI en français, code en anglais.
 
 Bugs et propositions : [GitHub Issues](https://github.com/Flavien-Dragamig/lorIAx-oss/issues).
 
----
+## Sécurité
 
-## 📜 Licence
+Pour signaler une vulnérabilité de manière responsable : `security@dragamig.fr`. Merci de **ne pas** ouvrir d'issue publique pour les failles non encore corrigées.
 
-[MIT](./LICENSE) © 2026 [Dragamig SAS](https://dragamig.fr).
+L'app applique par défaut : CSP avec nonce, protection SSRF sur les URLs entrantes, rate-limiting, classification de documents, et hash bcrypt des mots de passe.
 
-Voir [`NOTICE.md`](./NOTICE.md) pour les licences des dépendances tierces.
+## Changelog
 
-> **Mention IA** : ce projet a été préparé pour publication open source par **Studio Dragamig avec l'aide de Claude d'Anthropic**.
+Voir [`CHANGELOG.md`](./CHANGELOG.md). Le projet suit [SemVer](https://semver.org/lang/fr/) et [Conventional Commits](https://www.conventionalcommits.org/fr/).
+
+## À propos
+
+> **Créé par [Studio Dragamig](https://dragamig.fr) avec l'aide de [Claude d'Anthropic](https://www.anthropic.com/claude).**
+
+[Studio Dragamig](https://dragamig.fr) est un studio indépendant français qui conçoit des outils numériques souverains pour les organismes engagés. LorIAx est notre suite collaborative phare, dont nous publions ici l'édition open source.
+
+L'usage de Claude (Anthropic) intervient en assistance à la conception, à la documentation et à la maintenance, **toujours sous supervision humaine** : les choix d'architecture, de produit, de sécurité et de licensing restent ceux de Studio Dragamig.
+
+## Remerciements
+
+- **[Deuxfleurs](https://deuxfleurs.fr)** pour [Garage](https://garagehq.deuxfleurs.fr), le stockage objet souverain.
+- **[Kevin Jahns](https://github.com/dmonad)** pour Yjs, l'épine dorsale de la collaboration temps réel.
+- **[L'équipe TipTap](https://tiptap.dev)** pour l'éditeur le plus modulaire de l'écosystème.
+- **[LiveKit](https://livekit.io)** pour avoir rendu la visio WebRTC self-host accessible.
+- **[Drizzle Team](https://orm.drizzle.team)** pour l'ORM SQL le plus agréable de l'écosystème Node.
+- **[Andrew Kane](https://github.com/ankane)** pour pgvector.
+- Toute la communauté **shadcn/ui** et **Tailwind**.
+- Et l'ensemble des mainteneurs OSS listés dans [`NOTICE.md`](./NOTICE.md) — sans vous, ce projet n'existerait pas.
+
+## Licence
+
+[MIT](./LICENSE) — Copyright © 2026 Dragamig SAS.
+
+Tu es libre d'utiliser, modifier, redistribuer et commercialiser ce logiciel, y compris dans un produit fermé, à condition de préserver la notice de copyright et de licence. Aucune garantie n'est fournie.
