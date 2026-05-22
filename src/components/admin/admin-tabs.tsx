@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type AccessLevel = "admin" | "facility_manager";
+type AccessLevel = "admin";
 type Tab = {
   href: string;
   label: string;

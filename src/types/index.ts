@@ -87,22 +87,6 @@ export type Favorite = InferSelectModel<typeof favorites>;
 export type NewFavorite = InferInsertModel<typeof favorites>;
 export type EntityType = 'document' | 'space' | 'template' | 'calendar_event' | 'meeting';
 
-export type MeetingRoomPrincipalType = "user" | "team" | "role";
-export type MeetingRoomBookingStatus = "confirmed" | "cancelled";
-
-export interface OpeningHoursSlot {
-  from: string; // "HH:MM"
-  to: string;   // "HH:MM"
-}
-export type DayOfWeek = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
-export type OpeningHours = Record<DayOfWeek, OpeningHoursSlot[]>;
-
-export interface BookingAttendee {
-  userId?: string;
-  email?: string;
-  displayName?: string;
-}
-
 export interface ResolvedFavorite {
   id: string;
   entityType: EntityType;
@@ -116,7 +100,7 @@ export interface ResolvedFavorite {
 }
 
 // Types applicatifs
-export type UserRole = "super_admin" | "admin" | "editor" | "viewer" | "facility_manager";
+export type UserRole = "super_admin" | "admin" | "editor" | "viewer";
 export type SpaceType = "personal" | "team" | "organization";
 export type DocVisibility = "private" | "team" | "public";
 export type ClassificationLevel = "public" | "internal" | "confidential" | "secret";

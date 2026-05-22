@@ -158,7 +158,6 @@ const createEventSchema = z.object({
   dependsOnEventId: z.string().uuid().optional(),
   progress: z.number().int().min(0).max(100).optional(),
   documentId: z.string().uuid().optional(),
-  meetingRoomId: z.string().uuid().optional(),
   attendees: z.array(z.object({
     userId: z.string().uuid().optional(),
     email: z.string().email().optional(),
@@ -218,7 +217,6 @@ export async function POST(
       dependsOnEventId: eventData.dependsOnEventId,
       progress: eventData.progress || 0,
       documentId: eventData.documentId,
-      meetingRoomId: eventData.meetingRoomId,
       uid,
       createdBy: user.id,
     })

@@ -36,7 +36,6 @@ export const userRoleEnum = pgEnum("user_role", [
   "admin",
   "editor",
   "viewer",
-  "facility_manager",
 ]);
 
 export const spaceTypeEnum = pgEnum("space_type", [
