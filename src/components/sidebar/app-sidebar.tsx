@@ -33,7 +33,6 @@ import {
   Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { CreateSpaceDialog } from "@/components/sidebar/create-space-dialog";
 import { QuickNav } from "./quick-nav";
 import { SpacesSection } from "./spaces-section";
 import { SortableDocumentTree } from "./sortable-document";
@@ -310,7 +309,6 @@ const [creatingFolder, setCreatingFolder] = useState(false);
           id="spaces"
           title="Espaces"
           icon={Layers}
-          actions={<CreateSpaceDialog onCreated={loadSpaces} />}
         >
           <SpacesSection
             spaces={spaces}
