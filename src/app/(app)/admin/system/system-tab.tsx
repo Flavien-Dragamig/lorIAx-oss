@@ -14,7 +14,6 @@ import {
   TriangleAlert,
   Eye,
   EyeOff,
-  DoorOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,10 +42,6 @@ interface CollabSettings {
   collabEnabled: boolean;
 }
 
-interface ModulesSettings {
-  meetingRoomsEnabled: boolean;
-}
-
 interface RolePermissions {
   canCreateSpaces: boolean;
   canCreatePublicDocs: boolean;
@@ -63,10 +58,6 @@ const defaultSettings: SystemSettings = {
 
 const defaultCollabSettings: CollabSettings = {
   collabEnabled: true,
-};
-
-const defaultModulesSettings: ModulesSettings = {
-  meetingRoomsEnabled: false,
 };
 
 const defaultLdapSettings: LdapSettings = {
@@ -124,7 +115,6 @@ const permissionLabels: Record<keyof RolePermissions, { label: string; descripti
 export function AdminSystemTab() {
   const [settings, setSettings] = useState<SystemSettings>(defaultSettings);
   const [collabSettings, setCollabSettings] = useState<CollabSettings>(defaultCollabSettings);
-  const [modulesSettings, setModulesSettings] = useState<ModulesSettings>(defaultModulesSettings);
   const [ldapSettings, setLdapSettings] = useState<LdapSettings>(defaultLdapSettings);
   const [rolePerms, setRolePerms] = useState(defaultRolePermissions);
   const [loading, setLoading] = useState(true);
@@ -162,16 +152,6 @@ export function AdminSystemTab() {
       }
       if (data.collab) {
         setCollabSettings((prev) => ({ ...prev, ...data.collab }));
-      }
-      if (data.meeting_rooms_enabled !== undefined) {
-        const v = data.meeting_rooms_enabled;
-        const enabled =
-          typeof v === "boolean"
-            ? v
-            : v && typeof v === "object" && "enabled" in v
-              ? Boolean(v.enabled)
-              : false;
-        setModulesSettings((prev) => ({ ...prev, meetingRoomsEnabled: enabled }));
       }
       if (data.ldap) {
         setLdapSettings((prev) => ({ ...prev, ...data.ldap }));
@@ -251,7 +231,6 @@ export function AdminSystemTab() {
         collab: collabSettings,
         ldap: ldapSettings,
         rolePermissions: rolePerms,
-        meeting_rooms_enabled: modulesSettings.meetingRoomsEnabled,
       };
 
       const res = await fetch("/api/admin/settings", {
@@ -359,45 +338,6 @@ export function AdminSystemTab() {
               <option value="editor">Éditeur</option>
               <option value="admin">Administrateur</option>
             </select>
-          </div>
-        </div>
-      </section>
-
-      {/* Modules optionnels */}
-      <section className="space-y-4">
-        <div className="flex items-center gap-2 border-b border-border pb-2">
-          <DoorOpen className="h-4 w-4 text-muted-foreground" />
-          <h3 className="font-medium">Modules optionnels</h3>
-        </div>
-
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium">Gestion des salles de réunion</p>
-              <p className="text-xs text-muted-foreground">
-                Active la création de salles, l&apos;attribution de droits, le suivi
-                d&apos;occupation et l&apos;intégration au calendrier. Le rôle
-                « Gestionnaire de salles » devient attribuable.
-              </p>
-            </div>
-            <button
-              onClick={() =>
-                setModulesSettings((prev) => ({
-                  ...prev,
-                  meetingRoomsEnabled: !prev.meetingRoomsEnabled,
-                }))
-              }
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                modulesSettings.meetingRoomsEnabled ? "bg-primary" : "bg-gray-300 dark:bg-gray-600"
-              }`}
-              aria-label="Activer la gestion des salles"
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  modulesSettings.meetingRoomsEnabled ? "translate-x-6" : "translate-x-1"
-                }`}
-              />
-            </button>
           </div>
         </div>
       </section>

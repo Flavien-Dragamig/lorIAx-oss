@@ -138,14 +138,5 @@ export async function GET() {
     results.backup = { status: "unconfigured" };
   }
 
-  // Salles de réunion
-  try {
-    const [mrRow] = await db.select().from(systemSettings).where(eq(systemSettings.key, "meeting_rooms_enabled"));
-    const enabled = typeof mrRow?.value === "boolean" ? mrRow.value : false;
-    results.meetingRooms = { status: enabled ? "up" : "disabled" };
-  } catch {
-    results.meetingRooms = { status: "disabled" };
-  }
-
   return NextResponse.json(results);
 }
