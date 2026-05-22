@@ -7,12 +7,10 @@ import {
   Wifi,
   Mic,
   Users,
-  DoorOpen,
   Network,
   Brain,
   Mail,
   DatabaseBackup,
-  Images,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ServiceCard, type HealthStatus } from "@/components/admin/service-card";
@@ -27,13 +25,11 @@ interface ServiceHealth {
 interface ModuleToggles {
   livekitEnabled: boolean;
   collabEnabled: boolean;
-  meetingRoomsEnabled: boolean;
   ldapEnabled: boolean;
   aiEnabled: boolean;
   whisperConfigured: boolean;
   emailConfigured: boolean;
   backupConfigured: boolean;
-  imagesConfigured: boolean;
 }
 
 const MODULES = [
@@ -71,18 +67,6 @@ const MODULES = [
     icon: <Users className="h-5 w-5" />,
     configHref: "/admin/system",
     hasHealth: true,
-    readOnly: false,
-  },
-  {
-    key: "meetingRooms",
-    toggleKey: "meetingRoomsEnabled" as keyof ModuleToggles,
-    settingsKey: "meeting_rooms_enabled" as string | null,
-    settingsField: null,
-    name: "Salles de réunion",
-    description: "Gestion des salles, réservations et permissions.",
-    icon: <DoorOpen className="h-5 w-5" />,
-    configHref: "/admin/meeting-rooms",
-    hasHealth: false,
     readOnly: false,
   },
   {
@@ -133,30 +117,16 @@ const MODULES = [
     hasHealth: false,
     readOnly: true,
   },
-  {
-    key: "images",
-    toggleKey: "imagesConfigured" as keyof ModuleToggles,
-    settingsKey: null,
-    settingsField: null,
-    name: "Banques d'images",
-    description: "Bibliothèque org, Unsplash et autres banques d'images pour le Studio.",
-    icon: <Images className="h-5 w-5" />,
-    configHref: "/admin/images",
-    hasHealth: false,
-    readOnly: true,
-  },
 ] as const;
 
 const DEFAULT_TOGGLES: ModuleToggles = {
   livekitEnabled: false,
   collabEnabled: true,
-  meetingRoomsEnabled: false,
   ldapEnabled: false,
   aiEnabled: false,
   whisperConfigured: false,
   emailConfigured: false,
   backupConfigured: false,
-  imagesConfigured: false,
 };
 
 export function AdminServicesTab() {
@@ -168,32 +138,17 @@ export function AdminServicesTab() {
 
   const loadSettings = useCallback(async () => {
     try {
-      const [settingsRes, providersRes] = await Promise.all([
-        fetch("/api/admin/settings"),
-        fetch("/api/admin/image-providers"),
-      ]);
+      const settingsRes = await fetch("/api/admin/settings");
       const data = settingsRes.ok ? await settingsRes.json() : {};
-      const providers = providersRes.ok ? await providersRes.json() : [];
-
-      const unsplashEnabled = Array.isArray(providers)
-        ? providers.some((p: { name: string; isEnabled: boolean; hasApiKey: boolean }) =>
-            p.name === "unsplash" && p.isEnabled && p.hasApiKey
-          )
-        : false;
 
       setToggles({
         livekitEnabled: data.livekit?.livekitEnabled ?? false,
         collabEnabled: data.collab?.collabEnabled ?? true,
-        meetingRoomsEnabled:
-          typeof data.meeting_rooms_enabled === "boolean"
-            ? data.meeting_rooms_enabled
-            : (data.meeting_rooms_enabled?.enabled ?? false),
         ldapEnabled: data.ldap?.ldapEnabled ?? false,
         aiEnabled: data.ai_global?.enabled ?? false,
         whisperConfigured: !!(data.whisper?.whisperApiUrl),
         emailConfigured: !!(data.email?.smtpHost || data.email?.resendApiKey),
         backupConfigured: !!(data.backup_s3?.enabled),
-        imagesConfigured: unsplashEnabled,
       });
     } catch {
       // conserver les valeurs par défaut
@@ -229,14 +184,8 @@ export function AdminServicesTab() {
     setToggles((prev) => ({ ...prev, [module.toggleKey]: newValue }));
 
     try {
-      let body: Record<string, unknown>;
-      if (module.settingsField && module.settingsKey) {
-        body = { [module.settingsKey]: { [module.settingsField]: newValue } };
-      } else if (module.settingsKey === "meeting_rooms_enabled") {
-        body = { meeting_rooms_enabled: newValue };
-      } else {
-        return;
-      }
+      if (!module.settingsField || !module.settingsKey) return;
+      const body = { [module.settingsKey]: { [module.settingsField]: newValue } };
 
       const res = await fetch("/api/admin/settings", {
         method: "PUT",

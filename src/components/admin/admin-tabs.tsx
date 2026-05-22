@@ -2,7 +2,6 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import {
   Users,
   Building2,
@@ -12,7 +11,6 @@ import {
   Shield,
   Key,
   Tag,
-  DoorOpen,
   PenLine,
   Radio,
 } from "lucide-react";
@@ -24,13 +22,10 @@ type Tab = {
   label: string;
   icon: typeof Users;
   access: AccessLevel[];
-  flag?: "meeting_rooms";
   superAdminOnly?: boolean;
 };
 
 const ALL: AccessLevel[] = ["admin"];
-const FM_ONLY: AccessLevel[] = ["facility_manager"];
-const BOTH: AccessLevel[] = ["admin", "facility_manager"];
 
 const tabs: Tab[] = [
   { href: "/admin/users", label: "Utilisateurs", icon: Users, access: ALL },
@@ -40,13 +35,10 @@ const tabs: Tab[] = [
   { href: "/admin/labels", label: "Labels", icon: Tag, access: ALL },
   { href: "/admin/editor", label: "Éditeur", icon: PenLine, access: ALL },
   { href: "/admin/services", label: "Services", icon: Server, access: ALL },
-  { href: "/admin/meeting-rooms", label: "Salles", icon: DoorOpen, access: BOTH, flag: "meeting_rooms" },
   { href: "/admin/license", label: "Licence", icon: Key, access: ALL },
   { href: "/admin/telemetry", label: "Télémétrie", icon: Radio, access: ALL },
   { href: "/admin/system", label: "Système", icon: Settings, access: ALL },
 ];
-// Note : FM_ONLY est défini pour usage ultérieur si besoin de tabs réservés.
-void FM_ONLY;
 
 interface AdminTabsProps {
   userRole: string;
@@ -54,30 +46,13 @@ interface AdminTabsProps {
 
 export function AdminTabs({ userRole }: AdminTabsProps) {
   const pathname = usePathname();
-  const [meetingRoomsEnabled, setMeetingRoomsEnabled] = useState(false);
-
-  useEffect(() => {
-    fetch("/api/admin/settings")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        const value = data?.meeting_rooms_enabled;
-        if (typeof value === "boolean") setMeetingRoomsEnabled(value);
-        else if (value && typeof value === "object" && "enabled" in value) {
-          setMeetingRoomsEnabled(Boolean(value.enabled));
-        }
-      })
-      .catch(() => {});
-  }, []);
 
   const isAdmin = userRole === "admin" || userRole === "super_admin";
   const isSuperAdmin = userRole === "super_admin";
-  const isFacilityManager = userRole === "facility_manager";
 
   const visibleTabs = tabs.filter((t) => {
-    if (t.flag === "meeting_rooms" && !meetingRoomsEnabled) return false;
     if (t.superAdminOnly && !isSuperAdmin) return false;
     if (isAdmin && t.access.includes("admin")) return true;
-    if (isFacilityManager && t.access.includes("facility_manager")) return true;
     return false;
   });
 
