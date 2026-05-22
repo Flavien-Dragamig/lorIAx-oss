@@ -11,7 +11,6 @@ import {
   Loader2,
   Settings,
   Trash2,
-  LayoutGrid,
   GripHorizontal,
   Maximize2,
   Minimize2,
@@ -77,7 +76,7 @@ export function CalendarBlockView({
       return [];
     }
   })();
-  const viewMode: "month" = "month";
+  const viewMode = "month" as const;
   const showTitle = node.attrs.showTitle !== false;
   const blockHeight: number = node.attrs.height || 400;
 
