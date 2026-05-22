@@ -4,7 +4,6 @@ import path from "path";
 import next from "next";
 import { WebSocketServer, WebSocket } from "ws";
 import { createHocuspocusServer } from "./src/lib/collab/hocuspocus-config";
-import { ChatServer } from "./src/lib/chat/chat-server";
 import httpProxy from "http-proxy";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { drizzle } from "drizzle-orm/node-postgres";
@@ -48,30 +47,8 @@ async function main() {
   );
   await initTelemetryScheduler();
 
-  // Initialize video render worker
-  const { startRenderWorker } = await import("./src/lib/video/render-worker");
-  startRenderWorker();
-
-  // Schedule daily chat digest at 08:00
-  const { Cron } = await import("croner");
-  const { sendChatDigests } = await import("./src/lib/chat/chat-notifications");
-  new Cron("0 8 * * *", async () => {
-    console.log("[chat-scheduler] Envoi des digests...");
-    await sendChatDigests().catch((err) => console.error("[chat-scheduler] Erreur:", err));
-  });
-
-  // Schedule daily message retention purge at 03:00
-  const { purgeExpiredMessages } = await import("./src/lib/chat/retention");
-  new Cron("0 3 * * *", async () => {
-    console.log("[chat-retention] Purge des messages expirés...");
-    await purgeExpiredMessages().catch((err) => console.error("[chat-retention] Erreur:", err));
-  });
-
   // Initialize Hocuspocus collaboration server
   const hocuspocus = createHocuspocusServer();
-
-  // Initialize Chat WebSocket server
-  const chatServer = new ChatServer();
 
   // Create bare WebSocket server (no HTTP server — we handle upgrades manually)
   const wss = new WebSocketServer({ noServer: true });
@@ -119,13 +96,6 @@ async function main() {
   // Handle WebSocket upgrades
   server.on("upgrade", (req, socket, head) => {
     const { pathname } = parse(req.url || "", true);
-
-    if (pathname === "/ws/chat") {
-      wss.handleUpgrade(req, socket, head, (ws: WebSocket) => {
-        chatServer.handleConnection(ws);
-      });
-      return;
-    }
 
     if (pathname === "/ws/collab") {
       // Upgrade to WebSocket, then pass to Hocuspocus

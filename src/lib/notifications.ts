@@ -5,7 +5,7 @@ import { sendEmail } from "@/lib/email/send";
 import { notificationEmail } from "@/lib/email/templates/notification";
 import logger from "@/lib/logger";
 
-type NotificationType = "mention" | "comment" | "reply" | "share" | "calendar_reminder" | "calendar_invitation" | "task_assigned";
+type NotificationType = "mention" | "comment" | "reply" | "share" | "calendar_reminder" | "calendar_invitation";
 
 interface CreateNotificationParams {
   userId: string;
