@@ -13,7 +13,7 @@ import {
   index,
   primaryKey,
 } from "drizzle-orm/pg-core";
-import { relations, InferSelectModel, InferInsertModel } from "drizzle-orm";
+import { relations } from "drizzle-orm";
 import { connectorTypeEnum } from "./schema-ai";
 
 /** Structure stockée dans la colonne speaker_mapping (JSONB).
@@ -1229,64 +1229,6 @@ export const backupJobs = pgTable("backup_jobs", {
   index("backup_jobs_type_idx").on(table.type),
   index("backup_jobs_started_at_idx").on(table.startedAt),
 ]);
-
-// ============================================================
-// TASKS
-// ============================================================
-
-export const taskKindEnum = pgEnum("task_kind", ["document_item", "gantt_event"]);
-export const taskStatusEnum = pgEnum("task_status", ["open", "in_progress", "done", "cancelled"]);
-
-export const tasks = pgTable(
-  "tasks",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    kind: taskKindEnum("kind").notNull(),
-    title: varchar("title", { length: 500 }).notNull(),
-    status: taskStatusEnum("status").notNull().default("open"),
-    dueAt: timestamp("due_at", { withTimezone: true }),
-    assigneeId: uuid("assignee_id").references(() => users.id, { onDelete: "set null" }),
-    createdBy: uuid("created_by").notNull().references(() => users.id),
-    // document_item context
-    documentId: uuid("document_id").references(() => documents.id, { onDelete: "cascade" }),
-    nodeId: varchar("node_id", { length: 100 }),
-    // gantt_event context
-    calendarEventId: uuid("calendar_event_id").references(() => calendarEvents.id, { onDelete: "cascade" }),
-    // timestamps
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-  },
-  (table) => [
-    index("idx_tasks_assignee_status").on(table.assigneeId, table.status),
-    index("idx_tasks_document").on(table.documentId),
-    index("idx_tasks_calendar_event").on(table.calendarEventId),
-    uniqueIndex("idx_tasks_document_node").on(table.documentId, table.nodeId),
-  ]
-);
-
-export type Task = InferSelectModel<typeof tasks>;
-export type NewTask = InferInsertModel<typeof tasks>;
-
-export const tasksRelations = relations(tasks, ({ one }) => ({
-  assignee: one(users, {
-    fields: [tasks.assigneeId],
-    references: [users.id],
-    relationName: "taskAssignee",
-  }),
-  creator: one(users, {
-    fields: [tasks.createdBy],
-    references: [users.id],
-    relationName: "taskCreator",
-  }),
-  document: one(documents, {
-    fields: [tasks.documentId],
-    references: [documents.id],
-  }),
-  calendarEvent: one(calendarEvents, {
-    fields: [tasks.calendarEventId],
-    references: [calendarEvents.id],
-  }),
-}));
 
 // ============================================================
 // RELATIONS
