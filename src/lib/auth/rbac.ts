@@ -4,7 +4,6 @@ const ROLE_HIERARCHY: Record<UserRole, number> = {
   super_admin: 4,
   admin: 3,
   editor: 2,
-  facility_manager: 2, // rôle parallèle à editor : pas d'accès admin général
   viewer: 1,
 };
 
@@ -19,19 +18,6 @@ export function hasGlobalRole(
   requiredRole: UserRole
 ): boolean {
   return ROLE_HIERARCHY[userRole] >= ROLE_HIERARCHY[requiredRole];
-}
-
-/**
- * Salles de réunion : admin/super_admin OU rôle dédié facility_manager.
- * Volontairement parallèle à `hasGlobalRole("admin")` pour éviter
- * de donner les droits admin globaux au facility_manager.
- */
-export function canManageMeetingRooms(userRole: UserRole): boolean {
-  return (
-    userRole === "super_admin" ||
-    userRole === "admin" ||
-    userRole === "facility_manager"
-  );
 }
 
 export function hasPermissionLevel(

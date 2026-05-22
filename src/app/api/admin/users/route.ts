@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Le mot de passe doit faire au moins 8 caractères" }, { status: 400 });
     }
 
-    const validRoles = ["viewer", "editor", "facility_manager", "admin", "super_admin"] as const;
+    const validRoles = ["viewer", "editor", "admin", "super_admin"] as const;
     type ValidRole = typeof validRoles[number];
     const requestedRole = (validRoles as readonly string[]).includes(globalRole) ? globalRole : "editor";
 
@@ -157,7 +157,7 @@ export async function PATCH(request: NextRequest) {
   const updates: Record<string, unknown> = {};
 
   if (globalRole) {
-    const validRoles = ["viewer", "editor", "facility_manager", "admin", "super_admin"] as const;
+    const validRoles = ["viewer", "editor", "admin", "super_admin"] as const;
     if (!(validRoles as readonly string[]).includes(globalRole)) {
       return NextResponse.json({ error: "Rôle invalide" }, { status: 400 });
     }

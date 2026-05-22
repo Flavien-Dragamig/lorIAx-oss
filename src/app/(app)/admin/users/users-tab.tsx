@@ -41,7 +41,6 @@ interface AdminUser {
 const roleLabels: Record<string, string> = {
   super_admin: "Super Admin",
   admin: "Administrateur",
-  facility_manager: "Gestionnaire de salles",
   editor: "Éditeur",
   viewer: "Lecteur",
 };
@@ -49,13 +48,12 @@ const roleLabels: Record<string, string> = {
 const roleBadgeColors: Record<string, string> = {
   super_admin: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
   admin: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400",
-  facility_manager: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400",
   editor: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
   viewer: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400",
 };
 
-const ROLES_FOR_ADMIN = ["viewer", "editor", "facility_manager", "admin"] as const;
-const ROLES_FOR_SUPER_ADMIN = ["viewer", "editor", "facility_manager", "admin", "super_admin"] as const;
+const ROLES_FOR_ADMIN = ["viewer", "editor", "admin"] as const;
+const ROLES_FOR_SUPER_ADMIN = ["viewer", "editor", "admin", "super_admin"] as const;
 
 export function AdminUsersTab() {
   const { data: session } = useSession();

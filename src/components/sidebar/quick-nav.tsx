@@ -102,8 +102,7 @@ export function QuickNav({ pathname, user }: QuickNavProps) {
 
       {user &&
         (user.globalRole === "admin" ||
-          user.globalRole === "super_admin" ||
-          user.globalRole === "facility_manager") && (
+          user.globalRole === "super_admin") && (
           <Link
             href="/admin"
             className={`flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors ${

@@ -1,6 +1,5 @@
 "use client";
 
-import { DoorOpen } from "lucide-react";
 import type { CalendarEvent, Calendar } from "@/types";
 
 interface WeekViewProps {
@@ -139,9 +138,6 @@ export default function WeekView({
                           }}
                         >
                           <div className="font-medium truncate flex items-center gap-1">
-                            {event.meetingRoomId && (
-                              <DoorOpen className="h-2.5 w-2.5 shrink-0" aria-label="Salle de réunion" />
-                            )}
                             <span className="truncate">{event.title}</span>
                           </div>
                           <div className="opacity-70">{formatTime(start)}</div>

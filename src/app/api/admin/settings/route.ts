@@ -22,7 +22,6 @@ const VALID_KEYS = [
   "ai_alerts",
   "backup_s3",
   "backup_schedule",
-  "meeting_rooms_enabled",
 ] as const;
 
 type SettingsKey = (typeof VALID_KEYS)[number];
