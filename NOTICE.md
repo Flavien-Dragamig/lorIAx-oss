@@ -81,7 +81,7 @@ LorIAx OSS embarque des bibliothèques tierces, distribuées sous leurs licences
 
 | Source originale | Auteur | Licence | Usage dans LorIAx |
 |------------------|--------|---------|-------------------|
-| [VizHash GD](https://sebsauvage.net/wiki/doku.php?id=php:vizhash_gd_source) (PHP) | [Sébastien Sauvage](https://sebsauvage.net) | Zlib / libre | Portage TypeScript/Canvas dans `src/lib/vizhash.ts` pour les avatars visuels déterministes |
+| [VizHash GD](https://sebsauvage.net/wiki/doku.php?id=php:vizhash_gd_source) (PHP) | [Seb Sauvage](https://sebsauvage.net) | Zlib / libre | Portage TypeScript/Canvas dans `src/lib/vizhash.ts` pour les avatars visuels déterministes |
 
 ## Polices et icônes
 
