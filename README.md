@@ -135,6 +135,7 @@ L'intégralité de la stack est libre. Chaque outil est listé avec sa licence d
 | [cmdk](https://cmdk.paco.me) | 1 | MIT | Command palette |
 | [@dnd-kit](https://dndkit.com) | 6 | MIT | Drag & drop |
 | [Serwist](https://serwist.pages.dev) | 9 | BSD-3 | Service Worker / PWA |
+| [VizHash GD](https://sebsauvage.net/wiki/doku.php?id=php:vizhash_gd_source) (portage TS) | — | Zlib / libre | Avatars visuels déterministes (algorithme original de [Sébastien Sauvage](https://sebsauvage.net)) |
 
 ### Backend
 
@@ -381,6 +382,7 @@ L'usage de Claude (Anthropic) intervient en assistance à la conception, à la d
 
 ## Remerciements
 
+- **[Sébastien Sauvage](https://sebsauvage.net)** pour [VizHash GD](https://sebsauvage.net/wiki/doku.php?id=php:vizhash_gd_source), dont nous utilisons un portage TypeScript pour générer les avatars visuels déterministes des utilisateurs.
 - **[Deuxfleurs](https://deuxfleurs.fr)** pour [Garage](https://garagehq.deuxfleurs.fr), le stockage objet souverain.
 - **[Kevin Jahns](https://github.com/dmonad)** pour Yjs, l'épine dorsale de la collaboration temps réel.
 - **[L'équipe TipTap](https://tiptap.dev)** pour l'éditeur le plus modulaire de l'écosystème.
