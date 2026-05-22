@@ -12,18 +12,12 @@ import {
   Settings,
   Trash2,
   LayoutGrid,
-  GanttChart,
   GripHorizontal,
   Maximize2,
   Minimize2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Calendar, CalendarEvent } from "@/types";
-
-const GanttView = dynamic(
-  () => import("@/components/gantt/gantt-view").then((m) => ({ default: m.GanttView })),
-  { ssr: false }
-);
 
 // ---------------------------------------------------------------------------
 // Mini Month Grid (reusable)
@@ -83,7 +77,7 @@ export function CalendarBlockView({
       return [];
     }
   })();
-  const viewMode: "month" | "gantt" = node.attrs.viewMode || "month";
+  const viewMode: "month" = "month";
   const showTitle = node.attrs.showTitle !== false;
   const blockHeight: number = node.attrs.height || 400;
 
@@ -241,31 +235,7 @@ export function CalendarBlockView({
           )}
           <div className="flex-1" />
 
-          {/* View mode toggle: Mois / Gantt */}
-          <div className="flex items-center rounded-md border border-border overflow-hidden">
-            <Button
-              variant={viewMode === "month" ? "secondary" : "ghost"}
-              size="sm"
-              className="h-6 rounded-none px-2 gap-1 text-xs"
-              onClick={() => updateAttributes({ viewMode: "month" })}
-              title="Vue mois"
-            >
-              <LayoutGrid className="h-3 w-3" />
-              Mois
-            </Button>
-            <Button
-              variant={viewMode === "gantt" ? "secondary" : "ghost"}
-              size="sm"
-              className="h-6 rounded-none px-2 gap-1 text-xs"
-              onClick={() => updateAttributes({ viewMode: "gantt" })}
-              title="Vue Gantt"
-            >
-              <GanttChart className="h-3 w-3" />
-              Gantt
-            </Button>
-          </div>
-
-          {/* Month navigation — visible in month mode only */}
+          {/* Month navigation */}
           {viewMode === "month" && (
             <>
               <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setCurrentDate((d) => { const n = new Date(d); n.setMonth(n.getMonth() - 1); return n; })} title="Mois précédent">
@@ -291,24 +261,8 @@ export function CalendarBlockView({
           </Button>
         </div>
 
-        {/* Gantt view */}
-        {viewMode === "gantt" ? (
-          <div className={fullscreen ? "flex-1" : ""} style={fullscreen ? undefined : { height: blockHeight }}>
-            {calendarIds.length === 0 ? (
-              <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
-                Aucun calendrier sélectionné — configurez le bloc pour continuer.
-              </div>
-            ) : (
-              <GanttView
-                calendarId={calendarIds[0]}
-                height={fullscreen ? undefined : blockHeight}
-                embedded
-              />
-            )}
-          </div>
-        ) : (
-          /* Mini month grid */
-          loading ? (
+        {/* Mini month grid */}
+        {loading ? (
             <div className={`flex items-center justify-center ${fullscreen ? "flex-1" : "py-8"}`}>
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
             </div>
@@ -362,8 +316,7 @@ export function CalendarBlockView({
                 </div>
               ))}
             </div>
-          )
-        )}
+          )}
 
         {/* Resize handle */}
         <div

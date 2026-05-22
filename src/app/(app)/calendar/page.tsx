@@ -8,21 +8,9 @@ import {
   ChevronRight,
   Plus,
   Loader2,
-  BarChart3,
   Video,
 } from "lucide-react";
 
-const GanttView = dynamic(
-  () => import("@/components/gantt/gantt-view").then((m) => ({ default: m.GanttView })),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex items-center justify-center h-[400px]">
-        <Loader2 className="h-5 w-5 animate-spin" />
-      </div>
-    ),
-  }
-);
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -37,14 +25,13 @@ import DayView from "@/components/calendar/day-view";
 import AgendaView from "@/components/calendar/agenda-view";
 import type { CalendarEvent } from "@/types";
 
-type ViewType = "month" | "week" | "day" | "agenda" | "gantt";
+type ViewType = "month" | "week" | "day" | "agenda";
 
 const VIEW_LABELS: Record<ViewType, string> = {
   month: "Mois",
   week: "Semaine",
   day: "Jour",
   agenda: "Agenda",
-  gantt: "Gantt",
 };
 
 const MONTH_FR = [
@@ -82,11 +69,6 @@ function getDateRange(date: Date, view: ViewType): { start: Date; end: Date } {
         start: new Date(year, month, date.getDate()),
         end: new Date(year, month, date.getDate() + 30),
       };
-    case "gantt":
-      return {
-        start: new Date(year, month, 1),
-        end: new Date(year, month + 3, 0),
-      };
     default:
       return { start: new Date(year, month, 1), end: new Date(year, month + 1, 0) };
   }
@@ -104,9 +86,6 @@ function navigateDate(date: Date, view: ViewType, direction: number): Date {
     case "day":
     case "agenda":
       d.setDate(d.getDate() + direction);
-      break;
-    case "gantt":
-      d.setMonth(d.getMonth() + direction);
       break;
   }
   return d;
@@ -132,8 +111,6 @@ function formatTitle(date: Date, view: ViewType): string {
       return `${date.getDate()} ${MONTH_FR[date.getMonth()]} ${date.getFullYear()}`;
     case "agenda":
       return `À partir du ${date.getDate()} ${MONTH_FR[date.getMonth()]}`;
-    case "gantt":
-      return `Gantt — ${MONTH_FR[date.getMonth()]} ${date.getFullYear()}`;
     default:
       return "";
   }
@@ -330,19 +307,6 @@ export default function CalendarPage() {
               {VIEW_LABELS[v]}
             </button>
           ))}
-          {!isMobile && (
-            <button
-              onClick={() => setView("gantt")}
-              className={`px-3 py-1 text-xs transition-colors flex items-center gap-1 ${
-                view === "gantt"
-                  ? "bg-primary text-primary-foreground"
-                  : "hover:bg-accent"
-              }`}
-            >
-              <BarChart3 className="h-3 w-3" />
-              {VIEW_LABELS.gantt}
-            </button>
-          )}
         </div>
 
         {/* New event */}
@@ -430,9 +394,6 @@ export default function CalendarPage() {
               visibleCalendarIds={visibleCalendarIds}
               onEventClick={handleEventClick}
             />
-          )}
-          {view === "gantt" && (
-            <GanttView calendarId={visibleIds[0] || ""} />
           )}
         </div>
       </div>
