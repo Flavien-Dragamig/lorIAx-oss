@@ -4,9 +4,7 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import TaskList from "@tiptap/extension-task-list";
-import { TaskItemAssignable } from "./extensions/task-item-assignable";
-import { Checklist, ChecklistItem } from "./extensions/checklist";
-import { useTaskSync } from "@/hooks/use-task-sync";
+import TaskItem from "@tiptap/extension-task-item";
 import TiptapImage from "@tiptap/extension-image";
 import TiptapLink from "@tiptap/extension-link";
 import Underline from "@tiptap/extension-underline";
@@ -88,7 +86,6 @@ export function LorIAxEditor({
   lockedOffline = false,
 }: LorIAxEditorProps) {
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const syncTasks = useTaskSync(documentId);
   const isCollab = collaborationEnabled && ydoc && provider;
   // In collab mode (Yjs CRDT), always allow editing — merging happens automatically.
   // Only restrict editing for pessimistic lock mode when offline.
@@ -140,9 +137,7 @@ export function LorIAxEditor({
       CalloutBlock,
       Placeholder.configure({ placeholder }),
       TaskList,
-      TaskItemAssignable,
-      Checklist,
-      ChecklistItem,
+      TaskItem.configure({ nested: true }),
       TiptapImage.configure({ inline: false, allowBase64: true }),
       TiptapLink.configure({
         openOnClick: false,
@@ -221,9 +216,6 @@ export function LorIAxEditor({
       },
     },
     onUpdate: ({ editor }) => {
-      // Always sync task assignees regardless of collab mode
-      syncTasks(editor);
-
       if (!isCollab) {
         const md = (editor.storage as { markdown?: { getMarkdown: () => string } }).markdown?.getMarkdown() ?? "";
         onChange?.(md);
@@ -247,15 +239,6 @@ export function LorIAxEditor({
     }
   }, [editor, ydoc, provider]);
 
-  // Sync initial des tâches au chargement (délai pour laisser Yjs charger le contenu en mode collab)
-  useEffect(() => {
-    if (!editor || !documentId) return;
-    const t = setTimeout(() => {
-      syncTasks(editor);
-    }, isCollab ? 4000 : 500);
-    return () => clearTimeout(t);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editor, documentId]);
 
   // Cleanup
   useEffect(() => {
