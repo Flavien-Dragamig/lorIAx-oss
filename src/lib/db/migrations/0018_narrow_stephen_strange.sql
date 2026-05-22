@@ -1,3 +1,0 @@
-ALTER TABLE "penpot_mappings" DISABLE ROW LEVEL SECURITY;--> statement-breakpoint
-DROP TABLE "penpot_mappings" CASCADE;--> statement-breakpoint
-ALTER TABLE "video_projects" ALTER COLUMN "timeline_json" SET DEFAULT '{"tracks":[{"type":"video","id":"video-1","name":"Vidéo 1","clips":[]},{"type":"audio","id":"audio-1","name":"Audio 1","clips":[]},{"type":"subtitle","id":"subtitles","name":"Sous-titres","clips":[]}],"durationMs":0}'::jsonb;
