@@ -1,0 +1,116 @@
+# ============================================================
+# LorIAx — LiveKit + Egress + Whisper (override optionnel)
+# Usage : docker compose -f docker-compose.yml -f docker-compose.livekit.yml up -d
+# ============================================================
+#
+# Prérequis :
+# - Définir LIVEKIT_ENABLED=true dans .env.local
+# - Définir WHISPER_ENABLED=true dans .env.local (optionnel, pour la transcription)
+#
+
+services:
+  # Redis — Bus de messages LiveKit ↔ Egress
+  livekit-redis:
+    image: redis:7-alpine
+    networks:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # LiveKit — Serveur SFU (WebRTC)
+  livekit:
+    image: livekit/livekit-server:latest
+    command: --config /etc/livekit.yaml
+    ports:
+      - "7880:7880"
+      - "7881:7881"
+      - "7882:7882/udp"
+    volumes:
+      - ./docker/livekit/livekit.yaml:/etc/livekit.yaml:ro
+    depends_on:
+      livekit-redis:
+        condition: service_healthy
+    networks:
+      - frontend
+      - backend
+    restart: unless-stopped
+
+  # LiveKit Egress — Enregistrement des réunions
+  livekit-egress:
+    image: livekit/egress:latest
+    environment:
+      EGRESS_CONFIG_FILE: /etc/egress.yaml
+    volumes:
+      - ./docker/livekit/egress.yaml:/etc/egress.yaml:ro
+      - ./data/recordings:/recordings
+    depends_on:
+      livekit-redis:
+        condition: service_healthy
+      livekit:
+        condition: service_started
+    networks:
+      - backend
+    restart: unless-stopped
+
+  # Faster-Whisper (Speaches) — Transcription audio
+  # Image : speaches-ai/speaches — Faster-Whisper via CTranslate2 (x4 plus rapide)
+  # API OpenAI-compatible : POST /v1/audio/transcriptions
+  # Modèles HF Hub : Systran/faster-whisper-{tiny,base,small,medium,large-v3}
+  whisper:
+    image: ghcr.io/speaches-ai/speaches:latest-cpu
+    user: "1000:1000"
+    ports:
+      - "9000:8000"
+    environment:
+      UVICORN_HOST: "0.0.0.0"
+      UVICORN_PORT: "8000"
+      WHISPER__INFERENCE_DEVICE: cpu
+      WHISPER__COMPUTE_TYPE: int8
+      PRELOAD_MODELS: '["${WHISPER_MODEL:-Systran/faster-whisper-medium}"]'
+      HF_TOKEN: ${HF_TOKEN:-}
+    volumes:
+      - whisper_cache:/home/ubuntu/.cache/huggingface/hub
+    networks:
+      - backend
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+
+  # Voxtral Realtime — STT Mistral via vLLM (requiert GPU >= 16 Go VRAM)
+  # Désactivé par défaut (profil Docker). Pour activer :
+  #   docker compose -f docker-compose.yml -f docker-compose.livekit.yml --profile voxtral up -d
+  # Puis mettre VOXTRAL_ENABLED=true et TRANSCRIPTION_ENGINE=voxtral dans .env.local
+  voxtral:
+    profiles: ["voxtral"]
+    build:
+      context: ./docker/voxtral
+    ports:
+      - "9001:9001"
+    environment:
+      VOXTRAL_MODEL: ${VOXTRAL_MODEL:-mistralai/Voxtral-Mini-4B-Realtime-2602}
+      HF_TOKEN: ${HF_TOKEN:-}
+      VLLM_PORT: "8000"
+    volumes:
+      - voxtral_cache:/root/.cache/huggingface
+    networks:
+      - backend
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+        limits:
+          memory: 24G
+
+volumes:
+  whisper_cache:
+  voxtral_cache:

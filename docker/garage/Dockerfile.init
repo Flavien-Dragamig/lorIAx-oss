@@ -1,0 +1,7 @@
+FROM dxflrs/garage:v1.1.0 AS garage-bin
+FROM alpine:3.20
+COPY --from=garage-bin /garage /usr/local/bin/garage
+COPY garage-client.toml /etc/garage-client.toml
+COPY init.sh /usr/local/bin/garage-init
+RUN chmod +x /usr/local/bin/garage-init
+ENTRYPOINT ["/usr/local/bin/garage-init"]

@@ -1,0 +1,5 @@
+nom,email,role,mot_de_passe,equipe
+Marie Lefevre,marie.lefevre@monorga.fr,admin,,Direction
+Thomas Bernard,thomas.bernard@monorga.fr,editor,bienvenue2024,Projets
+Sophie Martin,sophie.martin@monorga.fr,editor,,Projets
+Jean Dupont,jean.dupont@monorga.fr,viewer,,

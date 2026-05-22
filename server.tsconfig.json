@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "outDir": ".next/standalone",
+    "noEmit": false,
+    "target": "ES2022",
+    "ignoreDeprecations": "6.0"
+  },
+  "files": ["server.ts"],
+  "include": [],
+  "exclude": ["node_modules"]
+}

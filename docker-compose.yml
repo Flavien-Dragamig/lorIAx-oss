@@ -1,0 +1,142 @@
+# ============================================================
+# LorIAx — Docker Compose (Développement local)
+# Usage : docker compose up -d
+# ============================================================
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.local
+    environment:
+      - DATABASE_URL=postgresql://loriax:${POSTGRES_PASSWORD:-loriax_secret}@postgres:5432/loriax
+      - S3_ENDPOINT=garage
+      - S3_PORT=3900
+      - WORKSPACES_PATH=/app/workspaces
+    volumes:
+      - workspaces_data:/app/workspaces
+    depends_on:
+      postgres:
+        condition: service_healthy
+      garage:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - frontend
+      - backend
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: loriax
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-loriax_secret}
+      POSTGRES_DB: loriax
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U loriax -d loriax"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - backend
+
+  garage:
+    image: dxflrs/garage:v1.1.0
+    volumes:
+      - garage_data:/var/lib/garage/data
+      - garage_meta:/var/lib/garage/meta
+      - ./docker/garage/garage.toml:/etc/garage.toml:ro
+    ports:
+      - "3900:3900"
+      - "3903:3903"
+    healthcheck:
+      disable: true
+    restart: unless-stopped
+    networks:
+      - backend
+
+  garage-init:
+    build:
+      context: ./docker/garage
+      dockerfile: Dockerfile.init
+    depends_on:
+      garage:
+        condition: service_started
+    environment:
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-loriax_s3}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-loriax_s3_secret}
+    volumes:
+      - garage_meta:/var/lib/garage/meta
+      - ./docker/garage/garage.toml:/etc/garage.toml:ro
+    networks:
+      - backend
+
+  # Backup PostgreSQL automatique (quotidien à 2h du matin)
+  backup:
+    image: pgvector/pgvector:pg16
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGUSER: loriax
+      PGPASSWORD: ${POSTGRES_PASSWORD:-loriax_secret}
+      PGDATABASE: loriax
+    volumes:
+      - backup_data:/backups
+    entrypoint: >
+      /bin/sh -c "
+      echo '0 2 * * * pg_dump -Fc loriax > /backups/loriax-$$(date +%Y%m%d-%H%M%S).dump && find /backups -name \"*.dump\" -mtime +7 -delete' > /var/spool/cron/crontabs/root
+      && crond -f -l 2
+      "
+    restart: unless-stopped
+    networks:
+      - backend
+
+  # ============================================================
+  # Ollama — LLM local (chat IA, résumé de réunion)
+  # Démarre systématiquement avec l'environnement de dev
+  # ============================================================
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ============================================================
+  # Visioconférence LiveKit — voir docker-compose.livekit.yml
+  # Activation : LIVEKIT_ENABLED=true dans .env.local
+  # Lancement : docker compose -f docker-compose.yml -f docker-compose.livekit.yml up -d
+  # ============================================================
+
+volumes:
+  postgres_data:
+  garage_data:
+  garage_meta:
+  workspaces_data:
+  backup_data:
+  ollama_models:
+
+networks:
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge

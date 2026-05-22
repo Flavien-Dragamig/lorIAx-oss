@@ -1,0 +1,163 @@
+# ============================================================
+# LorIAx — Docker Compose (Client / Auto-hébergement)
+# Template pour les clients hébergeant LorIAx sur leur VPS
+#
+# Différences avec docker-compose.prod.yml (Dokploy interne) :
+#   - image pré-construite depuis le registre GHCR (pas de build)
+#   - Variable LICENSE_MANAGER_URL pointant vers license.loriax.fr
+#   - Réseau loriax-network local (pas de dépendance Dokploy)
+#
+# Usage :
+#   docker compose -f docker-compose.client.yml up -d
+#   Mise à jour : ./update.sh
+# ============================================================
+
+services:
+  app:
+    image: ghcr.io/flavien-dragamig/loriax:latest
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://loriax:${POSTGRES_PASSWORD}@pgbouncer:6432/loriax
+      - S3_ENDPOINT=garage
+      - S3_PORT=3900
+      - WORKSPACES_PATH=/app/workspaces
+      - LICENSE_MANAGER_URL=https://license.loriax.fr
+    volumes:
+      - workspaces_data:/app/workspaces
+    depends_on:
+      pgbouncer:
+        condition: service_healthy
+      garage:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - loriax-network
+
+  pgbouncer:
+    image: bitnami/pgbouncer:1
+    environment:
+      PGBOUNCER_DATABASE: loriax
+      POSTGRESQL_HOST: postgres
+      POSTGRESQL_PORT: "5432"
+      POSTGRESQL_USERNAME: loriax
+      POSTGRESQL_PASSWORD: ${POSTGRES_PASSWORD}
+      PGBOUNCER_POOL_MODE: transaction
+      PGBOUNCER_DEFAULT_POOL_SIZE: "20"
+      PGBOUNCER_MAX_CLIENT_CONN: "200"
+      PGBOUNCER_MIN_POOL_SIZE: "5"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-p", "6432"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - loriax-network
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: loriax
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: loriax
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U loriax -d loriax"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - loriax-network
+
+  postgres-init:
+    image: pgvector/pgvector:pg16
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGUSER: loriax
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: loriax
+    entrypoint: >
+      /bin/sh -c "
+      psql -c 'CREATE EXTENSION IF NOT EXISTS pgcrypto;'
+      && psql -c 'CREATE EXTENSION IF NOT EXISTS vector;'
+      && psql -c 'CREATE EXTENSION IF NOT EXISTS pg_trgm;'
+      "
+    networks:
+      - loriax-network
+
+  garage:
+    image: dxflrs/garage:v1.1.0
+    volumes:
+      - garage_data:/var/lib/garage/data
+      - garage_meta:/var/lib/garage/meta
+      - ./docker/garage/garage.toml:/etc/garage.toml:ro
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3909/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - loriax-network
+
+  garage-init:
+    image: dxflrs/garage:v1.1.0
+    depends_on:
+      garage:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      sleep 2;
+      garage -c /etc/garage.toml layout assign -z dc1 -c 1G $$(garage -c /etc/garage.toml node id -q | cut -d@ -f1) 2>/dev/null || true;
+      garage -c /etc/garage.toml layout apply --version 1 2>/dev/null || true;
+      garage -c /etc/garage.toml key import --yes ${S3_ACCESS_KEY} ${S3_SECRET_KEY} --name loriax 2>/dev/null || true;
+      garage -c /etc/garage.toml bucket create loriax-files 2>/dev/null || true;
+      garage -c /etc/garage.toml bucket allow --read --write --owner loriax-files --key loriax 2>/dev/null || true;
+      exit 0;
+      "
+    volumes:
+      - garage_meta:/var/lib/garage/meta
+      - ./docker/garage/garage.toml:/etc/garage.toml:ro
+    networks:
+      - loriax-network
+
+  backup:
+    image: pgvector/pgvector:pg16
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGUSER: loriax
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: loriax
+    volumes:
+      - backup_data:/backups
+    entrypoint: >
+      /bin/sh -c "
+      echo '0 2 * * * pg_dump -Fc loriax > /backups/loriax-$$(date +%Y%m%d-%H%M%S).dump && find /backups -name \"*.dump\" -mtime +7 -delete' > /var/spool/cron/crontabs/root
+      && crond -f -l 2
+      "
+    restart: unless-stopped
+    networks:
+      - loriax-network
+
+volumes:
+  postgres_data:
+  garage_data:
+  garage_meta:
+  workspaces_data:
+  backup_data:
+
+networks:
+  loriax-network:
+    driver: bridge
