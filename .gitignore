@@ -1,0 +1,66 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+/playwright-report/
+/test-results/
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files
+.env
+.env.local
+.env.production.local
+
+# workspaces (volumes git des espaces)
+/workspaces/
+
+# données locales (recordings, etc.)
+/data/
+
+# serwist (service worker generated at build time)
+/public/sw.js
+/public/sw.js.map
+/public/swe-worker-*.js
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# Superpowers working files
+docs/superpowers/
+
+# Méta locale (non destinée au repo public)
+/BRIEF.md
+/AUDIT-PRECOPIE.md
+/CLAUDE.md
+/.claude/
+

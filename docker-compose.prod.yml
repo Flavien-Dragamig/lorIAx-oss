@@ -1,0 +1,204 @@
+# ============================================================
+# LorIAx — Docker Compose (Production / Dokploy)
+# Usage Dokploy : pointer Compose Path vers ce fichier
+# Usage manuel  : docker compose -f docker-compose.prod.yml up -d
+# ============================================================
+#
+# Differences avec docker-compose.yml (dev local) :
+#   - Pas de ports exposes (Traefik/reverse proxy gere le routage)
+#   - Reseau dokploy-network (external) pour integration Traefik
+#   - env_file: .env (genere par Dokploy depuis l'onglet Environment)
+#   - init.sql embarque dans le container (pas de chemin relatif)
+#   - Pas de valeurs par defaut sur les secrets (obliger la config)
+# ============================================================
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://loriax:${POSTGRES_PASSWORD}@pgbouncer:6432/loriax
+      - S3_ENDPOINT=garage
+      - S3_PORT=3900
+      - WORKSPACES_PATH=/app/workspaces
+    volumes:
+      - workspaces_data:/app/workspaces
+    depends_on:
+      app-migrate:
+        condition: service_completed_successfully
+      pgbouncer:
+        condition: service_healthy
+      garage:
+        condition: service_healthy
+      garage-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    networks:
+      - dokploy-network
+
+  # Initialise le schéma Drizzle uniquement sur une BDD vide (premier déploiement).
+  # Les déploiements suivants laissent le migrator embarqué dans server.ts
+  # appliquer les migrations delta (cf. scripts/init-db.ts pour la logique).
+  # Connexion directe à postgres:5432 (pas pgbouncer) car DDL nécessite session pooling.
+  app-migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://loriax:${POSTGRES_PASSWORD}@postgres:5432/loriax
+    depends_on:
+      postgres-init:
+        condition: service_completed_successfully
+    entrypoint: ["node_modules/.bin/tsx", "scripts/init-db.ts"]
+    restart: "no"
+    networks:
+      - dokploy-network
+
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    environment:
+      DB_NAME: loriax
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: loriax
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      LISTEN_PORT: "6432"
+      POOL_MODE: transaction
+      DEFAULT_POOL_SIZE: "20"
+      MAX_CLIENT_CONN: "200"
+      MIN_POOL_SIZE: "5"
+      AUTH_TYPE: scram-sha-256
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-p", "6432"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - dokploy-network
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: loriax
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: loriax
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U loriax -d loriax"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - dokploy-network
+
+  postgres-init:
+    image: pgvector/pgvector:pg16
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGUSER: loriax
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: loriax
+    entrypoint: >
+      /bin/sh -c "
+      psql -c 'CREATE EXTENSION IF NOT EXISTS pgcrypto;'
+      && psql -c 'CREATE EXTENSION IF NOT EXISTS vector;'
+      && psql -c 'CREATE EXTENSION IF NOT EXISTS pg_trgm;'
+      "
+    networks:
+      - dokploy-network
+
+  garage:
+    image: dxflrs/garage:v1.1.0
+    volumes:
+      - garage_data:/var/lib/garage/data
+      - garage_meta:/var/lib/garage/meta
+      - ./docker/garage/garage.toml:/etc/garage.toml:ro
+    healthcheck:
+      test: ["CMD", "/garage", "-c", "/etc/garage.toml", "node", "id"]
+      interval: 10s
+      timeout: 10s
+      start_period: 15s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - dokploy-network
+
+  # L'image officielle dxflrs/garage est distroless (pas de /bin/sh).
+  # Dockerfile.init copie le binaire `garage` dans une base alpine pour pouvoir
+  # chaîner les commandes d'init via shell.
+  # Le volume garage_meta est monté en lecture seule pour permettre à la CLI
+  # de signer les appels RPC avec le node_key généré par le démon (sans accès
+  # à /var/lib/garage/meta/node_key, garage stats échoue avec "Unable to read
+  # node key. ... IO error: No such file or directory").
+  garage-init:
+    build:
+      context: ./docker/garage
+      dockerfile: Dockerfile.init
+    depends_on:
+      garage:
+        condition: service_healthy
+    environment:
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+    volumes:
+      - garage_meta:/var/lib/garage/meta:ro
+    restart: "no"
+    networks:
+      - dokploy-network
+
+  backup:
+    image: pgvector/pgvector:pg16
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGUSER: loriax
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: loriax
+    volumes:
+      - backup_data:/backups
+    # L'image pgvector (Debian) ne contient pas crond. On exécute pg_dump
+    # via une boucle sleep simple : check toutes les heures, snapshot à 02:00.
+    entrypoint: >
+      /bin/sh -c "
+      mkdir -p /backups;
+      while true; do
+        H=$$(date +%H);
+        if [ \"$$H\" = \"02\" ]; then
+          pg_dump -Fc loriax > /backups/loriax-$$(date +%Y%m%d-%H%M%S).dump;
+          find /backups -name '*.dump' -mtime +7 -delete;
+          sleep 3600;
+        fi;
+        sleep 1800;
+      done
+      "
+    restart: unless-stopped
+    networks:
+      - dokploy-network
+
+volumes:
+  postgres_data:
+  garage_data:
+  garage_meta:
+  workspaces_data:
+  backup_data:
+
+networks:
+  dokploy-network:
+    external: true

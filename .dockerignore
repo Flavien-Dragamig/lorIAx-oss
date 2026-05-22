@@ -1,0 +1,49 @@
+# Dépendances
+node_modules/
+.pnp/
+.pnp.js
+
+# Build
+.next/
+out/
+dist/
+build/
+
+# Tests
+coverage/
+.playwright/
+playwright-report/
+test-results/
+
+# Dev
+.env
+.env.local
+.env.*.local
+*.log
+npm-debug.log*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose*.yml
+docker/
+
+# Documentation
+docs/
+*.md
+LICENSE
+
+# Workspaces (données runtime, pas dans l'image)
+workspaces/
+
+# Claude
+.claude/

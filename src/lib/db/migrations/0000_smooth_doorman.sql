@@ -1,0 +1,1 @@
+-- Initial migration (schema already applied via db:push)

@@ -1,0 +1,2 @@
+ALTER TABLE "studio_images" ALTER COLUMN "size_bytes" SET DATA TYPE bigint;--> statement-breakpoint
+CREATE UNIQUE INDEX "idx_image_providers_org_name" ON "image_providers" USING btree ("organization_id","name");

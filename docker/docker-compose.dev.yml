@@ -1,0 +1,22 @@
+version: "3.9"
+
+# Usage: docker compose -f docker/docker-compose.yml -f docker/docker-compose.dev.yml up
+
+services:
+  # En dev, on ne lance pas l'app via Docker (on utilise npm run dev)
+  app:
+    profiles:
+      - disabled
+
+  postgres:
+    ports:
+      - "5432:5432"
+
+  garage:
+    ports:
+      - "3900:3900"
+      - "3902:3902"
+
+  nginx:
+    profiles:
+      - disabled
