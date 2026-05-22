@@ -8,12 +8,10 @@
  *  - 1 base de données utilisateur "Clients InnoDev" (5 colonnes, 10 lignes)
  *  - 1 calendrier équipe + événements de la semaine (dont 2 visios)
  *  - 2 réunions visio LiveKit reliées aux événements
- *  - Réservations de salles pour les événements présentiels
- *  - 8 tâches assignées aux membres
  *
  * Idempotent : ne fait rien si l'espace "InnoDev" existe déjà.
  *
- * Prérequis : seed-dev-users.ts (admin@loriax.dev) + seed-meeting-rooms.ts (Salle Atlas/Mercure)
+ * Prérequis : seed-dev-users.ts (admin@loriax.dev)
  *
  * Usage : npm run db:seed:demo
  */
@@ -28,13 +26,9 @@ import {
   calendarEvents,
   calendarEventAttendees,
   meetings,
-  meetingRooms,
-  meetingRoomBookings,
   userDatabases,
   userDatabaseColumns,
   userDatabaseRows,
-  tasks,
-  systemSettings,
 } from "../src/lib/db/schema";
 import { organizations, organizationMembers } from "../src/lib/db/schema-org";
 import { eq } from "drizzle-orm";
@@ -476,8 +470,6 @@ Voir : [[strategie-commerciale-q2]]
 
 Maquette officielle — version validée en COMEX du [[comex-12-mai|12 mai 2026]].
 
-<div data-type="design-block" data-design-id="__LOGO_DESIGN_ID__" title="Logo InnoDev — version finale"></div>
-
 ## Déclinaisons
 
 - Carré arrondi sombre sur fond clair (usage principal).
@@ -700,10 +692,6 @@ async function main() {
   });
   console.log("  ✓ Calendrier 'Équipe InnoDev'");
 
-  // 8. Salles de réunion — récupération (déjà créées par seed-meeting-rooms)
-  const atlas = await db.select().from(meetingRooms).where(eq(meetingRooms.name, "Salle Atlas")).limit(1);
-  const mercure = await db.select().from(meetingRooms).where(eq(meetingRooms.name, "Salle Mercure")).limit(1);
-
   // 9. Événements
   console.log("\n→ Événements du calendrier");
 
@@ -725,7 +713,6 @@ async function main() {
       color: "#1f3a5f",
       isVisio: true,
       documentSlug: "roadmap-2026",
-      roomId: null as string | null,
       attendees: [ADMIN_ID, "00000000-0000-0000-0000-000000000101", "00000000-0000-0000-0000-000000000102", "00000000-0000-0000-0000-000000000103"],
     },
     {
@@ -737,31 +724,28 @@ async function main() {
       color: "#f59e0b",
       isVisio: true,
       documentSlug: "roadmap-2026",
-      roomId: null as string | null,
       attendees: [ADMIN_ID, "00000000-0000-0000-0000-000000000101", "00000000-0000-0000-0000-000000000102"],
     },
     {
       title: "Onboarding Marie — Jour 4",
       description: "Atelier d'immersion avec son parrain (cf. onboarding ingénieur).",
-      location: "Salle Mercure",
+      location: "Bureau Paris",
       startAt: at("2026-05-14", "14:00"),
       endAt: at("2026-05-14", "15:00"),
       color: "#10b981",
       isVisio: false,
       documentSlug: "onboarding-ingenieur",
-      roomId: mercure[0]?.id ?? null,
       attendees: ["00000000-0000-0000-0000-000000000101", "00000000-0000-0000-0000-000000000102"],
     },
     {
       title: "Atelier RSE & frugalité",
       description: "Atelier ouvert à toute l'équipe — mesure de l'impact environnemental du produit.",
-      location: "Salle Atlas",
+      location: "Bureau Paris",
       startAt: at("2026-05-15", "09:30"),
       endAt: at("2026-05-15", "11:00"),
       color: "#22c55e",
       isVisio: false,
       documentSlug: "architecture-technique",
-      roomId: atlas[0]?.id ?? null,
       attendees: [ADMIN_ID, "00000000-0000-0000-0000-000000000102", "00000000-0000-0000-0000-000000000103", "00000000-0000-0000-0000-000000000105"],
     },
     {
@@ -773,7 +757,6 @@ async function main() {
       color: "#3b82f6",
       isVisio: true,
       documentSlug: "strategie-commerciale-q2",
-      roomId: null as string | null,
       attendees: [ADMIN_ID, "00000000-0000-0000-0000-000000000104"],
     },
     {
@@ -785,7 +768,6 @@ async function main() {
       color: "#a855f7",
       isVisio: false,
       documentSlug: "manuel-accueil",
-      roomId: null as string | null,
       attendees: [ADMIN_ID, "00000000-0000-0000-0000-000000000101", "00000000-0000-0000-0000-000000000102", "00000000-0000-0000-0000-000000000103", "00000000-0000-0000-0000-000000000104", "00000000-0000-0000-0000-000000000105"],
     },
   ];
@@ -825,27 +807,12 @@ async function main() {
       color: ev.color,
       documentId,
       meetingId,
-      meetingRoomId: ev.roomId,
       createdBy: ADMIN_ID,
     });
 
     // Lier le meeting à l'événement (calendarEventId)
     if (meetingId) {
       await db.update(meetings).set({ calendarEventId: eventId }).where(eq(meetings.id, meetingId));
-    }
-
-    // Réservation de salle si présentiel
-    if (ev.roomId) {
-      await db.insert(meetingRoomBookings).values({
-        roomId: ev.roomId,
-        userId: ADMIN_ID,
-        title: ev.title,
-        startAt: ev.startAt,
-        endAt: ev.endAt,
-        attendees: ev.attendees,
-        status: "confirmed",
-        calendarEventId: eventId,
-      });
     }
 
     // Participants
@@ -858,43 +825,8 @@ async function main() {
       });
     }
 
-    console.log(`  ✓ ${ev.title}${ev.isVisio ? " (visio)" : ev.roomId ? ` (${ev.location})` : ""}`);
+    console.log(`  ✓ ${ev.title}${ev.isVisio ? " (visio)" : ""}`);
   }
-
-  // 10. Tâches
-  console.log("\n→ Tâches");
-  const taskSeeds = [
-    { title: "Finaliser la maquette du Studio v2",        slug: "presentation-logo",         assignee: "00000000-0000-0000-0000-000000000103", due: at("2026-05-15", "17:00") },
-    { title: "Brancher LiveKit fallback self-hosted",     slug: "architecture-technique",    assignee: "00000000-0000-0000-0000-000000000102", due: at("2026-05-20", "17:00") },
-    { title: "Préparer la démo Aurea Conseil",            slug: "strategie-commerciale-q2",  assignee: "00000000-0000-0000-0000-000000000104", due: at("2026-05-18", "09:00") },
-    { title: "Rédiger l'annonce Account Executive",       slug: "processus-recrutement",     assignee: "00000000-0000-0000-0000-000000000105", due: at("2026-05-16", "18:00") },
-    { title: "Reformuler la charte couleurs",             slug: "charte-graphique",          assignee: "00000000-0000-0000-0000-000000000103", due: at("2026-05-22", "17:00") },
-    { title: "Tester restauration backup mensuelle",      slug: "plan-continuite",           assignee: "00000000-0000-0000-0000-000000000102", due: at("2026-05-23", "12:00") },
-    { title: "Mettre à jour les comptes clients en pilote", slug: "clients-innodev",         assignee: "00000000-0000-0000-0000-000000000104", due: at("2026-05-21", "17:00") },
-    { title: "Animer l'atelier RSE",                      slug: "manuel-accueil",            assignee: "00000000-0000-0000-0000-000000000105", due: at("2026-05-15", "11:00") },
-  ];
-  for (const t of taskSeeds) {
-    await db.insert(tasks).values({
-      kind: "document_item",
-      title: t.title,
-      status: "open",
-      dueAt: t.due,
-      assigneeId: t.assignee,
-      createdBy: ADMIN_ID,
-      documentId: docIdBySlug[t.slug],
-      nodeId: randomUUID(),
-    });
-  }
-  console.log(`  ✓ ${taskSeeds.length} tâches`);
-
-  // 11. Activer le module salles si pas déjà fait
-  await db
-    .insert(systemSettings)
-    .values({ key: "meeting_rooms_enabled", value: true, updatedAt: new Date() })
-    .onConflictDoUpdate({
-      target: systemSettings.key,
-      set: { value: true, updatedAt: new Date() },
-    });
 
   console.log("\n✅ Seed démo InnoDev terminé.");
   process.exit(0);

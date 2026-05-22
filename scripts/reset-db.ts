@@ -1,6 +1,6 @@
 /**
  * Reset de la base de données — supprime toutes les données utilisateurs/contenu.
- * Préserve uniquement : system_settings, ai_providers, image_providers, shared_presets.
+ * Préserve uniquement : system_settings, ai_providers, shared_presets.
  *
  * Usage : npx tsx scripts/reset-db.ts
  */
@@ -33,9 +33,7 @@ async function resetDb() {
     "document_permissions",
     "document_collab_states",
     "attachments",
-    "whiteboard_snapshots",
     "mindmap_snapshots",
-    "tasks",
     "public_shares",
     "favorites",
     "activity_log",
@@ -45,18 +43,12 @@ async function resetDb() {
     "user_status",
     "api_keys",
     "webhooks",
-    "chat_messages",
-    "chat_channel_members",
-    "video_jobs",
     "user_database_rows",
     "user_database_columns",
     "external_database_mappings",
     "external_row_tracking",
     "sync_logs",
     "spreadsheet_data",
-    "user_whiteboard_library",
-    "meeting_room_bookings",
-    "meeting_room_permissions",
   ];
 
   // Phase 2 — tables intermédiaires (templates + prompts inclus pour éviter FK vers users)
@@ -70,12 +62,8 @@ async function resetDb() {
     "calendar_events",
     "calendars",
     "meetings",
-    "meeting_rooms",
     "user_databases",
-    "chat_channels",
-    "video_projects",
     "labels",
-    "studio_images",
   ];
 
   // Phase 3 — tables racines
@@ -107,8 +95,8 @@ async function resetDb() {
     }
   }
 
-  // Préservé : system_settings, ai_providers, image_providers, shared_presets
-  console.log("\n  → Préservés : system_settings, ai_providers, image_providers, shared_presets");
+  // Préservé : system_settings, ai_providers, shared_presets
+  console.log("\n  → Préservés : system_settings, ai_providers, shared_presets");
   console.log("\n✅ Reset terminé.");
   process.exit(0);
 }
